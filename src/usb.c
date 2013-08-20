@@ -70,6 +70,9 @@ static libusb_context *g_usb_context;
 
 extern int g_VitaMTP_logmask;
 
+extern volatile int cancel_pending;
+extern volatile uint32_t transaction_cancel_id;
+
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
 
 #define USB_BULK_READ libusb_bulk_transfer
@@ -643,6 +646,13 @@ ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
         if (written == 0)
         {
             ret = PTP_ERROR_IO;
+            break;
+        }
+
+        if(cancel_pending && transaction_cancel_id == ptp->Param1)
+        {
+            cancel_pending = 0;
+            ret = PTP_ERROR_CANCEL;
             break;
         }
 

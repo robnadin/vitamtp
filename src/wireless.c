@@ -18,6 +18,7 @@
 //
 
 #ifdef PTP_IP_SUPPORT
+#define _GNU_SOURCE
 #include "config.h"
 #include <arpa/inet.h>
 #include <errno.h>
@@ -57,6 +58,9 @@ enum broadcast_command
 
 extern int g_VitaMTP_logmask;
 static int g_broadcast_command_fds[] = {-1, -1};
+
+extern volatile int cancel_pending;
+extern volatile uint32_t transaction_cancel_id;
 
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
 
@@ -376,6 +380,14 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
             }
 
             written += ret;
+
+            if(cancel_pending && transaction_cancel_id == ptp->Param1)
+            {
+                cancel_pending = 0;
+                VitaMTP_Log(VitaMTP_DEBUG, "ptpip/senddata id: %d has been cancelled\n", ptp->Param1);
+                free(xdata);
+                return PTP_ERROR_CANCEL;
+            }
         }
 
         curwrite += towrite;
