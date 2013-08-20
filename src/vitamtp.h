@@ -20,6 +20,10 @@
 #ifndef VitaMTP_h
 #define VitaMTP_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 /**
@@ -779,5 +783,9 @@ int VitaMTP_Data_Metadata_To_XML(const metadata_t *p_metadata, char **data, int 
 int VitaMTP_Data_Capability_From_XML(capability_info_t **p_info, const char *data, int len);
 int VitaMTP_Data_Capability_To_XML(const capability_info_t *info, char **p_data, int *p_len);
 int VitaMTP_Data_Free_Capability(capability_info_t *info);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
