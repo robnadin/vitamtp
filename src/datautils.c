@@ -474,7 +474,10 @@ int VitaMTP_Data_Metadata_To_XML(const metadata_t *p_metadata, char **data, int 
             char *aspectRatio;
             asprintf(&aspectRatio, "%.6f", current->data.thumbnail.aspectRatio);
             char *period = strchr(aspectRatio, '.');
-            *period = ','; // All this to make period a comma, maybe there is an easier way?
+            if(period)
+            {
+                *period = ','; // All this to make period a comma, maybe there is an easier way?
+            }
             xmlTextWriterWriteAttribute(writer, BAD_CAST "aspectRatio", BAD_CAST aspectRatio);
             free(aspectRatio);
             xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "fromType", "%d", current->data.thumbnail.fromType);
