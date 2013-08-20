@@ -99,6 +99,9 @@ AC_FUNC_STAT
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([getcwd memset mkdir strchr strcspn strdup strrchr strstr strtol], [], [AC_MSG_ERROR([Cannot find required function.])])
 
+# Support for large files in 32bit systems
+AC_SYS_LARGEFILE
+
 # Output
 # Required for gphoto-ptp2
 AX_NEED_STDINT_H([src/_stdint.h])

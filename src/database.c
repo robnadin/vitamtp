@@ -18,6 +18,7 @@
 //
 
 #define _GNU_SOURCE
+#include "config.h"
 #include <assert.h>
 #include <dirent.h>
 #include <limits.h>

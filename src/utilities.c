@@ -18,6 +18,7 @@
 //
 
 #define _GNU_SOURCE
+#include "config.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <ftw.h>
@@ -87,7 +88,7 @@ int createNewFile(const char *name)
     return close(fd);
 }
 
-int readFileToBuffer(const char *name, size_t seek, unsigned char **p_data, unsigned int *p_len)
+int readFileToBuffer(const char *name, off_t seek, unsigned char **p_data, unsigned int *p_len)
 {
     FILE *file = fopen(name, "r");
 
@@ -102,17 +103,22 @@ int readFileToBuffer(const char *name, size_t seek, unsigned char **p_data, unsi
 
     if (buflen == 0)
     {
-        if (fseek(file, 0, SEEK_END) < 0)
+        if (fseeko(file, 0, SEEK_END) < 0)
         {
             LOG(LERROR, "Cannot seek to end of file.\n");
             fclose(file);
             return -1;
         }
 
+        /*
+         FIXME: this will produce undefined results on 32bit systems
+         if readFileToBuffer is called with p_len = 0 and the file
+         is greater than 2GiB
+        */
         buflen = (unsigned int)ftell(file);
     }
 
-    if (fseek(file, seek, SEEK_SET) < 0)
+    if (fseeko(file, seek, SEEK_SET) < 0)
     {
         LOG(LERROR, "Cannot seek to %zu.\n", seek);
         fclose(file);
@@ -142,21 +148,47 @@ int readFileToBuffer(const char *name, size_t seek, unsigned char **p_data, unsi
     return 0;
 }
 
-int writeFileFromBuffer(const char *name, size_t seek, unsigned char *data, size_t len)
+int writeFileFromBuffer(const char *name, off_t seek, unsigned char *data, size_t len)
 {
     FILE *file = fopen(name, "a+");
 
     if (file == NULL)
     {
-        LOG(LERROR, "Cannot open %s for writing.\n", name);
+        LOG(LERROR, "Cannot open %s for appending.\n", name);
         return -1;
     }
 
-    if (fseek(file, seek, SEEK_SET) < 0)
+    if (fseeko(file, 0, SEEK_END) < 0)
     {
-        LOG(LERROR, "Cannot seek to %zu.\n", seek);
+        LOG(LERROR, "Cannot seek to the end of the stream.\n");
         fclose(file);
         return -1;
+    }
+
+    off_t file_size = ftello(file);
+    if (file_size < 0)
+    {
+        LOG(LERROR, "Cannot get the current position on the stream\n");
+        fclose(file);
+        return -1;
+    }
+
+    if (file_size > 0 && seek < file_size)
+    {
+        file = freopen(name, "r+", file);
+
+        if (file == NULL)
+        {
+            LOG(LERROR, "Cannot reopen %s for writing.\n", name);
+            return -1;
+        }
+
+        if (fseeko(file, seek, SEEK_SET) < 0)
+        {
+            LOG(LERROR, "Cannot seek to %zu.\n", seek);
+            fclose(file);
+            return -1;
+        }
     }
 
     if (fwrite(data, sizeof(char), len, file) < len)
