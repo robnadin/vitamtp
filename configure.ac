@@ -61,6 +61,7 @@ if test x"$ac_enable_wireless" = "xyes" ; then
     DEVICE_CFLAGS="$DEVICE_CFLAGS -DPTP_IP_SUPPORT"
 fi
 AC_SUBST(DEVICE_CFLAGS)
+AC_SUBST(OSFLAGS)
 
 # Checks for XML.
 PKG_CHECK_MODULES(XML, libxml-2.0)
