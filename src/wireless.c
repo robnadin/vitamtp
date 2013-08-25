@@ -59,9 +59,6 @@ enum broadcast_command
 extern int g_VitaMTP_logmask;
 static int g_broadcast_command_fds[] = {-1, -1};
 
-extern volatile int cancel_pending;
-extern volatile uint32_t transaction_cancel_id;
-
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
 
 // the code below is taken from gphoto2
@@ -380,14 +377,6 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
             }
 
             written += ret;
-
-            if(cancel_pending && transaction_cancel_id == ptp->Param1)
-            {
-                cancel_pending = 0;
-                VitaMTP_Log(VitaMTP_DEBUG, "ptpip/senddata id: %d has been cancelled\n", ptp->Param1);
-                free(xdata);
-                return PTP_ERROR_CANCEL;
-            }
         }
 
         curwrite += towrite;
@@ -1202,7 +1191,7 @@ static inline void VitaMTP_Parse_Device_Headers(char *data, wireless_vita_info_t
 }
 
 static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t *device, unsigned int host_addr,
-                                       int timeout, device_registered_callback_t is_registered, register_device_callback_t create_register_pin)
+                                       cancel_callback_t is_cancelled, device_registered_callback_t is_registered, register_device_callback_t create_register_pin)
 {
     int s_sock;
     unsigned int slen;
@@ -1252,19 +1241,25 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
         FD_ZERO(&fd);
         FD_SET(s_sock, &fd);
 
-        if (timeout) time.tv_sec = timeout;
+        time.tv_sec = 1;
+        time.tv_usec = 0;
 
         // use select for the timeout feature, ignore fd
         // s_sock+1 allows us to check fd "s_sock" but ignore the rest
-        if ((ret = select(s_sock+1, &fd, NULL, NULL, timeout ? &time : NULL)) < 0)
+        if ((ret = select(s_sock+1, &fd, NULL, NULL, &time)) < 0)
         {
             VitaMTP_Log(VitaMTP_ERROR, "Error polling listener\n");
             break;
         }
+        else if (is_cancelled())
+        {
+            VitaMTP_Log(VitaMTP_INFO, "Listening cancelled by user\n");
+            break;
+        }
         else if (ret == 0)
         {
-            VitaMTP_Log(VitaMTP_INFO, "Listening timed out.\n");
-            break;
+            VitaMTP_Log(VitaMTP_DEBUG, "Listening timed out.\n");
+            continue;
         }
 
         slen = sizeof(si_client);
@@ -1409,6 +1404,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
 
     free(data);
     close(c_sock);
+    sleep(1);
     close(s_sock);
 
     if (device->network_device.addr.sin_addr.s_addr > 0)
@@ -1462,7 +1458,7 @@ void VitaMTP_Release_Wireless_Device(vita_device_t *device)
  *          an error code must be written to the second paramater of the callback.
  * @return a device pointer. NULL if error, no connected device, or no connected Vita
  */
-vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, int timeout,
+vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, cancel_callback_t is_cancelled,
         device_registered_callback_t is_registered, register_device_callback_t create_register_pin)
 {
     vita_device_t *device = malloc(sizeof(vita_device_t));
@@ -1473,9 +1469,10 @@ vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsig
         return NULL;
     }
 
-    if (VitaMTP_Get_Wireless_Device(info, device, host_addr, timeout, is_registered, create_register_pin) < 0)
+    if (VitaMTP_Get_Wireless_Device(info, device, host_addr, is_cancelled, is_registered, create_register_pin) < 0)
     {
         VitaMTP_Log(VitaMTP_ERROR, "error locating Vita\n");
+        free(device);
         return NULL;
     }
 

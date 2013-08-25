@@ -30,19 +30,6 @@
 
 #include "ptp-pack.c"
 
-/**
- * The callback type definition. Notice that a progress percentage ratio
- * is easy to calculate by dividing <code>sent</code> by
- * <code>total</code>.
- * @param sent the number of bytes sent so far
- * @param total the total number of bytes to send
- * @param data a user-defined dereferencable pointer
- * @return if anything else than 0 is returned, the current transfer will be
- *         interrupted / cancelled.
- */
-typedef int (* VitaMTP_progressfunc_t)(uint64_t const sent, uint64_t const total,
-                                       void const *const data);
-
 struct vita_device
 {
     PTPParams *params;
@@ -69,9 +56,6 @@ struct vita_device
 static libusb_context *g_usb_context;
 
 extern int g_VitaMTP_logmask;
-
-extern volatile int cancel_pending;
-extern volatile uint32_t transaction_cancel_id;
 
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
 
@@ -646,13 +630,6 @@ ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
         if (written == 0)
         {
             ret = PTP_ERROR_IO;
-            break;
-        }
-
-        if(cancel_pending && transaction_cancel_id == ptp->Param1)
-        {
-            cancel_pending = 0;
-            ret = PTP_ERROR_CANCEL;
             break;
         }
 
@@ -1427,11 +1404,14 @@ vita_device_t *VitaMTP_Get_First_USB_Vita(void)
 
     if ((numdevs = VitaMTP_Get_USB_Vitas(&devices)) < 0)
     {
+        libusb_exit(g_usb_context);
         return NULL;
     }
 
     if (devices == NULL || numdevs == 0)
     {
+        free(devices);
+        libusb_exit(g_usb_context);
         return NULL;
     }
 
@@ -1440,6 +1420,12 @@ vita_device_t *VitaMTP_Get_First_USB_Vita(void)
     VitaMTP_Unget_USB_Vitas(devices, numdevs);
     return first_device;
 }
+
+void VitaMTP_Close_USB_Vita(void)
+{
+    libusb_exit(g_usb_context);
+}
+
 
 // end of functions taken from libmtp
 #endif // ifdef PTP_USB_SUPPORT

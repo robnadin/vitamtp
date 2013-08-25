@@ -476,8 +476,23 @@ typedef struct copy_confirmation_info copy_confirmation_info_t;
 typedef struct capability_info capability_info_t;
 typedef struct wireless_host_info wireless_host_info_t;
 typedef struct wireless_vita_info wireless_vita_info_t;
+typedef int (*cancel_callback_t)(void);
 typedef int (*device_registered_callback_t)(const char *deviceid);
 typedef int (*register_device_callback_t)(wireless_vita_info_t *info, int *p_err);
+
+/**
+ * The callback type definition. Notice that a progress percentage ratio
+ * is easy to calculate by dividing <code>sent</code> by
+ * <code>total</code>.
+ * @param sent the number of bytes sent so far
+ * @param total the total number of bytes to send
+ * @param data a user-defined dereferencable pointer
+ * @return if anything else than 0 is returned, the current transfer will be
+ *         interrupted / cancelled.
+ */
+typedef int (* VitaMTP_progressfunc_t)(uint64_t const sent, uint64_t const total,
+                                       void const *const data);
+
 
 /**
  * This is the USB information for the Vita.
@@ -712,6 +727,7 @@ void VitaMTP_Release_USB_Device(vita_device_t *device);
 int VitaMTP_Get_USB_Vitas(vita_raw_device_t **p_raw_devices);
 void VitaMTP_Unget_USB_Vitas(vita_raw_device_t *raw_devices, int numdevs);
 vita_device_t *VitaMTP_Get_First_USB_Vita(void);
+void VitaMTP_Close_USB_Vita(void);
 
 /**
  * Funcions for wireless devices
@@ -719,7 +735,7 @@ vita_device_t *VitaMTP_Get_First_USB_Vita(void);
 int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr);
 void VitaMTP_Stop_Broadcast(void);
 void VitaMTP_Release_Wireless_Device(vita_device_t *device);
-vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, int timeout,
+vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, cancel_callback_t is_cancelled,
         device_registered_callback_t is_registered, register_device_callback_t create_register_pin);
 int VitaMTP_Get_Device_IP(vita_device_t *device);
 

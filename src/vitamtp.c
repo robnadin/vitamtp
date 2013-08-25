@@ -24,10 +24,6 @@
 
 int g_VitaMTP_logmask = VitaMTP_ERROR;
 
-//FIXME: the set/read of these variables should be atomic and portable.
-volatile int cancel_pending = 0;
-volatile uint32_t transaction_cancel_id = -1;
-
 /**
  * Set the logging level level.
  *  Valid logmask macros:
@@ -626,8 +622,6 @@ uint16_t VitaMTP_SendObjectMetadataItems(vita_device_t *device, uint32_t event_i
  */
 uint16_t VitaMTP_CancelTask(vita_device_t *device, uint32_t cancel_event_id)
 {
-    transaction_cancel_id = cancel_event_id;
-    cancel_pending = 1;
     return PTP_RC_OK;
 }
 
