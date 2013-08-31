@@ -146,7 +146,7 @@ struct browse_info
 {
     uint32_t ohfiParent;
     uint32_t unk1; // seen: 0 always
-    uint32_t unk2; // seen: 0 always
+    uint32_t index;
     uint32_t numObjects;
     uint32_t unk4; // seen: 0 always
 }  __attribute__((packed));
