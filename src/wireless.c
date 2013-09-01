@@ -1398,6 +1398,10 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
                 {
                     device->network_device.registered = 1;
                     strcpy(resp, "HTTP/1.1 200 OK\r\n");
+                    if(reg_complete)
+                    {
+                        reg_complete();
+                    }
                 }
             }
             else if (strcmp(method, "STANDBY") == 0)
@@ -1406,10 +1410,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
                 listen = 0; // found client to connect, need to let client close init socket
                 device->network_device.addr = si_client;
                 free(data);
-                if(reg_complete)
-                {
-                        reg_complete();
-                }
+
                 continue;
             }
             else
