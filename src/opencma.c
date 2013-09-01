@@ -1102,7 +1102,7 @@ static vita_device_t *connect_wireless()
 
     for (int i = 1; i <= OPENCMA_CONNECTION_TRIES; i++)
     {
-        if ((device = VitaMTP_Get_First_Wireless_Vita(&info, 0, 0, device_registered, generate_pin)) != NULL)
+        if ((device = VitaMTP_Get_First_Wireless_Vita(&info, 0, 0, device_registered, generate_pin, NULL)) != NULL)
         {
             break;
         }

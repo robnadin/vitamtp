@@ -1221,7 +1221,8 @@ static inline void VitaMTP_Parse_Device_Headers(char *data, wireless_vita_info_t
 }
 
 static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t *device, unsigned int host_addr,
-                                       cancel_callback_t is_cancelled, device_registered_callback_t is_registered, register_device_callback_t create_register_pin)
+                                       cancel_callback_t is_cancelled, device_registered_callback_t is_registered,
+                                       register_device_callback_t create_register_pin, device_reg_complete_callback_t reg_complete)
 {
     int s_sock;
     unsigned int slen;
@@ -1405,6 +1406,10 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
                 listen = 0; // found client to connect, need to let client close init socket
                 device->network_device.addr = si_client;
                 free(data);
+                if(reg_complete)
+                {
+                        reg_complete();
+                }
                 continue;
             }
             else
@@ -1489,7 +1494,7 @@ void VitaMTP_Release_Wireless_Device(vita_device_t *device)
  * @return a device pointer. NULL if error, no connected device, or no connected Vita
  */
 vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, cancel_callback_t is_cancelled,
-        device_registered_callback_t is_registered, register_device_callback_t create_register_pin)
+        device_registered_callback_t is_registered, register_device_callback_t create_register_pin, device_reg_complete_callback_t reg_complete)
 {
     vita_device_t *device = malloc(sizeof(vita_device_t));
 
@@ -1499,7 +1504,7 @@ vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsig
         return NULL;
     }
 
-    if (VitaMTP_Get_Wireless_Device(info, device, host_addr, is_cancelled, is_registered, create_register_pin) < 0)
+    if (VitaMTP_Get_Wireless_Device(info, device, host_addr, is_cancelled, is_registered, create_register_pin, reg_complete) < 0)
     {
         VitaMTP_Log(VitaMTP_ERROR, "error locating Vita\n");
         free(device);

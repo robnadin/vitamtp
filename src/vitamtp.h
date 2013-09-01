@@ -479,6 +479,7 @@ typedef struct wireless_vita_info wireless_vita_info_t;
 typedef int (*cancel_callback_t)(void);
 typedef int (*device_registered_callback_t)(const char *deviceid);
 typedef int (*register_device_callback_t)(wireless_vita_info_t *info, int *p_err);
+typedef void (*device_reg_complete_callback_t)(void);
 
 /**
  * The callback type definition. Notice that a progress percentage ratio
@@ -736,7 +737,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr);
 void VitaMTP_Stop_Broadcast(void);
 void VitaMTP_Release_Wireless_Device(vita_device_t *device);
 vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, cancel_callback_t is_cancelled,
-        device_registered_callback_t is_registered, register_device_callback_t create_register_pin);
+        device_registered_callback_t is_registered, register_device_callback_t create_register_pin, device_reg_complete_callback_t reg_complete);
 int VitaMTP_Get_Device_IP(vita_device_t *device);
 
 /**
