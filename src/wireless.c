@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "ptp.h"
 #include "vitamtp.h"
 
@@ -58,6 +59,13 @@ enum broadcast_command
 
 extern int g_VitaMTP_logmask;
 static int g_broadcast_command_fds[] = {-1, -1};
+
+extern volatile uint32_t g_register_cancel_id;
+extern volatile uint32_t g_canceltask_event_id;
+extern volatile int g_event_cancelled;
+extern volatile int g_canceltask_set;
+
+extern pthread_mutex_t g_event_mutex;
 
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
 
@@ -321,6 +329,8 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
 
     xdata = malloc(WRITE_BLOCKSIZE+8+4);
 
+    g_event_cancelled = 0;
+
     if (!xdata) return PTP_RC_GeneralError;
 
     curwrite = 0;
@@ -377,11 +387,24 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
             }
 
             written += ret;
+
+            pthread_mutex_lock(&g_event_mutex);
+            if(g_canceltask_set)
+            {
+                if(g_canceltask_event_id == g_register_cancel_id)
+                {
+                    g_event_cancelled = 1;
+                    VitaMTP_Log(VitaMTP_VERBOSE, "Event with ID %d cancelled by device\n", g_register_cancel_id);
+                    free(xdata);
+                    pthread_mutex_unlock(&g_event_mutex);
+                    return PTP_ERROR_CANCEL;
+                }
+            }
+            pthread_mutex_unlock(&g_event_mutex);
         }
 
         curwrite += towrite;
     }
-
     free(xdata);
     return PTP_RC_OK;
 }
@@ -767,6 +790,12 @@ ptp_ptpip_event_wait(PTPParams *params, PTPContainer *event)
     return ptp_ptpip_event(params, event, PTP_EVENT_CHECK);
 }
 
+uint16_t
+ptp_ptpip_control_cancel_request(PTPParams *params, uint32_t transactionid)
+{
+    return PTP_RC_OK;
+}
+
 static int
 VitaMTP_PTPIP_Connect(PTPParams *params, struct sockaddr_in *saddr, int port)
 {
@@ -882,6 +911,7 @@ static int VitaMTP_Data_Connect(vita_device_t *device)
     device->params->getdata_func    = ptp_ptpip_getdata;
     device->params->event_wait  = ptp_ptpip_event_wait;
     device->params->event_check = ptp_ptpip_event_check;
+    device->params->cancelreq_func = ptp_ptpip_control_cancel_request;
 
     if (VitaMTP_PTPIP_Connect(device->params, &device->network_device.addr, device->network_device.data_port) < 0)
     {

@@ -18,11 +18,17 @@
 //
 
 #include <memory.h>
+#include <pthread.h>
 #include <stdio.h>
 #include "ptp.h"
 #include "vitamtp.h"
 
 extern int g_VitaMTP_logmask;
+
+extern volatile uint32_t g_register_cancel_id;
+
+extern pthread_mutex_t g_event_mutex;
+extern pthread_mutex_t g_cancel_mutex;
 
 struct vita_device
 {
@@ -175,6 +181,7 @@ void VitaMTP_Release_Device(vita_device_t *device)
     {
         VitaMTP_Release_Wireless_Device(device);
     }
+    pthread_mutex_destroy(&g_event_mutex);
 }
 
 /**
@@ -234,6 +241,7 @@ PTPParams *VitaMTP_Get_PTP_Params(vita_device_t *device)
 const char *VitaMTP_Get_Identification(vita_device_t *device)
 {
     return device->identification;
+    pthread_mutex_init(&g_event_mutex, NULL);
 }
 
 /**
@@ -275,7 +283,10 @@ uint16_t VitaMTP_SendData(vita_device_t *device, uint32_t event_id, uint32_t cod
     ptp.Nparam = 1;
     ptp.Param1 = event_id;
 
+    g_register_cancel_id = event_id;
+    pthread_mutex_lock(&g_cancel_mutex);
     uint16_t ret = ptp_transaction(params, &ptp, PTP_DP_SENDDATA, len, &data, 0);
+    pthread_mutex_unlock(&g_cancel_mutex);
     return ret;
 }
 

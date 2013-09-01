@@ -17,12 +17,21 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include "ptp.h"
 #include "vitamtp.h"
 
 int g_VitaMTP_logmask = VitaMTP_ERROR;
+
+volatile uint32_t g_register_cancel_id = 0;
+volatile uint32_t g_canceltask_event_id = 0;
+volatile int g_event_cancelled = 0;
+volatile int g_canceltask_set = 0;
+
+pthread_mutex_t g_event_mutex;
+pthread_mutex_t g_cancel_mutex;
 
 /**
  * Set the logging level level.
@@ -622,7 +631,26 @@ uint16_t VitaMTP_SendObjectMetadataItems(vita_device_t *device, uint32_t event_i
  */
 uint16_t VitaMTP_CancelTask(vita_device_t *device, uint32_t cancel_event_id)
 {
-    return PTP_RC_OK;
+    uint16_t ret;
+
+    pthread_mutex_lock(&g_event_mutex);
+    g_canceltask_event_id = cancel_event_id;
+    g_canceltask_set = 1;
+    pthread_mutex_unlock(&g_event_mutex);
+
+    pthread_mutex_lock(&g_cancel_mutex);
+    if(g_event_cancelled)
+    {
+        PTPContainer resp;
+        PTPParams *params = VitaMTP_Get_PTP_Params(device);
+        // PTP_RC_TransactionCanceled
+        ret = ptp_ptpip_getresp(params, &resp);
+    } else {
+        ret = PTP_ERROR_CANCEL;
+    }
+    g_canceltask_set = 0;
+    pthread_mutex_unlock(&g_cancel_mutex);
+    return ret;
 }
 
 /**
@@ -666,6 +694,8 @@ uint16_t VitaMTP_SendObject(vita_device_t *device, uint32_t *p_parenthandle, uin
     objectinfo.ParentObject = *p_parenthandle;
     objectinfo.Filename = meta->name;
 
+    pthread_mutex_lock(&g_cancel_mutex);
+
     if (meta->dataType & Folder)
     {
         objectinfo.ObjectFormat = PTP_OFC_Association; // 0x3001
@@ -688,18 +718,18 @@ uint16_t VitaMTP_SendObject(vita_device_t *device, uint32_t *p_parenthandle, uin
         objectinfo.ModificationDate = meta->dateTimeCreated;
         ret = ptp_sendobjectinfo(VitaMTP_Get_PTP_Params(device), &store, p_parenthandle, p_handle, &objectinfo);
 
-        if (ret != PTP_RC_OK)
+        if (ret == PTP_RC_OK)
         {
-            return ret;
+            ret = ptp_sendobject(VitaMTP_Get_PTP_Params(device), data, (uint32_t)meta->size);
         }
-
-        ret = ptp_sendobject(VitaMTP_Get_PTP_Params(device), data, (uint32_t)meta->size);
     }
     else
     {
         // unsupported
         ret = PTP_RC_OperationNotSupported;
     }
+
+    pthread_mutex_unlock(&g_cancel_mutex);
 
     return ret;
 }
@@ -876,4 +906,9 @@ uint16_t VitaMTP_SendPCCapabilityInfo(vita_device_t *device, capability_info_t *
                                    0); // plus one for null terminator, which is required on the vita's side
     free(data);
     return ret;
+}
+
+void VitaMTP_RegisterCancelEventId(uint32_t event_id)
+{
+    g_register_cancel_id = event_id;
 }

@@ -783,6 +783,7 @@ uint16_t VitaMTP_GetObject(vita_device_t *device, uint32_t handle, metadata_t *m
 uint16_t VitaMTP_CheckExistance(vita_device_t *device, uint32_t handle, existance_object_t *existance);
 uint16_t VitaMTP_GetVitaCapabilityInfo(vita_device_t *device, capability_info_t **p_info);
 uint16_t VitaMTP_SendPCCapabilityInfo(vita_device_t *device, capability_info_t *info);
+void VitaMTP_RegisterCancelEventId(uint32_t event_id);
 
 /**
  * Functions to parse data

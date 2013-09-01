@@ -20,6 +20,7 @@
 #ifdef PTP_USB_SUPPORT
 #include "config.h"
 #include <iconv.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,6 +57,13 @@ struct vita_device
 static libusb_context *g_usb_context;
 
 extern int g_VitaMTP_logmask;
+
+extern volatile uint32_t g_register_cancel_id;
+extern volatile uint32_t g_canceltask_event_id ;
+extern volatile int g_event_cancelled;
+extern volatile int g_canceltask_set;
+
+extern pthread_mutex_t g_event_mutex;
 
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
 
@@ -269,6 +277,8 @@ ptp_write_func(
     unsigned long curwrite = 0;
     unsigned char *bytes;
 
+    g_event_cancelled = 0;
+
     // This is the largest block we'll need to read in.
     bytes = malloc(CONTEXT_BLOCK_SIZE);
 
@@ -350,6 +360,19 @@ ptp_write_func(
                 }
             }
         }
+
+        pthread_mutex_lock(&g_event_mutex);
+        if(g_canceltask_set)
+        {
+            if(g_canceltask_event_id == g_register_cancel_id)
+            {
+                g_event_cancelled = 1;
+                VitaMTP_Log(VitaMTP_VERBOSE, "Event with ID %d cancelled by device\n", g_register_cancel_id);
+                pthread_mutex_unlock(&g_event_mutex);
+                return PTP_ERROR_CANCEL;
+            }
+        }
+        pthread_mutex_unlock(&g_event_mutex);
 
         if (xwritten < towrite) /* short writes happen */
             break;
