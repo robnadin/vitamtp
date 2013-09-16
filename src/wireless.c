@@ -20,20 +20,50 @@
 #ifdef PTP_IP_SUPPORT
 #define _GNU_SOURCE
 #include "config.h"
-#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <iconv.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <pthread.h>
 #include "ptp.h"
 #include "vitamtp.h"
+
+#ifndef WIN32
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#else
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#endif
+
+// windows doesn't have those functions
+#ifdef WIN32
+#include "asprintf.h"
+#include "socketpair.h"
+#endif
+
+// some redefinitions to make the code more portable
+#ifndef WIN32
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
+#else
+#define PF_LOCAL AF_INET
+#define MSG_DONTWAIT 0
+#define EWOULDBLOCK WSAEWOULDBLOCK
+#define close(s) closesocket(s)
+#define errno WSAGetLastError()
+#endif
+
+// compatible sleep function
+#ifdef WIN32
+#define sleep(x) Sleep(1000 * x)
+#endif
 
 #define REQUEST_BUFFER_SIZE 100
 #define RESPONSE_MAX_SIZE 100
@@ -66,6 +96,32 @@ extern volatile int g_event_cancelled;
 extern volatile int g_canceltask_set;
 
 extern pthread_mutex_t g_event_mutex;
+
+#ifdef WIN32
+static int wsa_init = 0;
+
+int wsa_startup()
+{
+    if(wsa_init == 0)
+    {
+        WSADATA info;
+        if(WSAStartup(MAKEWORD(2,2), &info) == 0)
+        {
+            wsa_init = 1;
+        }
+    }
+    return wsa_init;
+}
+
+void wsa_cleanup()
+{
+    if(wsa_init)
+    {
+        WSACleanup();
+        wsa_init = 0;
+    }
+}
+#endif
 
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
 
@@ -805,7 +861,7 @@ VitaMTP_PTPIP_Connect(PTPParams *params, struct sockaddr_in *saddr, int port)
     saddr->sin_port     = htons(port);
     params->cmdfd = socket(PF_INET, SOCK_STREAM, 0);
 
-    if (params->cmdfd == -1)
+    if (params->cmdfd == INVALID_SOCKET)
     {
         perror("socket cmd");
         return -1;
@@ -813,14 +869,14 @@ VitaMTP_PTPIP_Connect(PTPParams *params, struct sockaddr_in *saddr, int port)
 
     params->evtfd = socket(PF_INET, SOCK_STREAM, 0);
 
-    if (params->evtfd == -1)
+    if (params->evtfd == INVALID_SOCKET)
     {
         perror("socket evt");
         close(params->cmdfd);
         return -1;
     }
 
-    if (-1 == connect(params->cmdfd, (struct sockaddr *)saddr, sizeof(struct sockaddr_in)))
+    if (SOCKET_ERROR == connect(params->cmdfd, (struct sockaddr *)saddr, sizeof(struct sockaddr_in)))
     {
         perror("connect cmd");
         close(params->cmdfd);
@@ -829,7 +885,7 @@ VitaMTP_PTPIP_Connect(PTPParams *params, struct sockaddr_in *saddr, int port)
     }
 
     // on Vita both must be connected before anything can be recieved
-    if (-1 == connect(params->evtfd, (struct sockaddr *)saddr, sizeof(struct sockaddr_in)))
+    if (SOCKET_ERROR == connect(params->evtfd, (struct sockaddr *)saddr, sizeof(struct sockaddr_in)))
     {
         perror("connect evt");
         close(params->cmdfd);
@@ -941,7 +997,7 @@ static int VitaMTP_Sock_Read_All(int sockfd, unsigned char **p_data, size_t *p_l
     {
         ssize_t clen;
 
-        if ((clen = recvfrom(sockfd, buffer, REQUEST_BUFFER_SIZE, len > 0 ? MSG_DONTWAIT : 0, src_addr, addrlen)) < 0)
+        if ((clen = recvfrom(sockfd, buffer, REQUEST_BUFFER_SIZE, len > 0 ? MSG_DONTWAIT : 0, src_addr, addrlen)) == SOCKET_ERROR)
         {
             if (errno == EWOULDBLOCK)
             {
@@ -987,7 +1043,7 @@ static int VitaMTP_Sock_Write_All(int sockfd, const unsigned char *data, size_t 
             break;
         }
 
-        if (clen < 0)
+        if (clen == SOCKET_ERROR)
         {
             return -1;
         }
@@ -1018,6 +1074,14 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
 {
     char *host_response;
 
+#ifdef WIN32
+    if(!wsa_startup())
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "WSA init failed\n");
+        return -1;
+    }
+#endif
+
     if (asprintf(&host_response,
                  "HTTP/1.1 200 OK\r\nhost-id:%s\r\nhost-type:%s\r\nhost-name:%s\r\nhost-mtp-protocol-version:%08d\r\nhost-request-port:%d\r\nhost-wireless-protocol-version:%08d\r\n",
                  info->guid, info->type, info->name, VITAMTP_PROTOCOL_MAX_VERSION, info->port, VITAMTP_WIRELESS_MAX_VERSION) < 0)
@@ -1032,7 +1096,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
     struct sockaddr_in si_client;
     unsigned int slen = sizeof(si_client);
 
-    if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+    if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
     {
         VitaMTP_Log(VitaMTP_ERROR, "cannot create broadcast socket\n");
         free(host_response);
@@ -1044,7 +1108,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
     si_host.sin_port = htons(info->port);
     si_host.sin_addr.s_addr = host_addr ? htonl(host_addr) : htonl(INADDR_ANY);
 
-    if (bind(sock, (struct sockaddr *)&si_host, sizeof(si_host)) < 0)
+    if (bind(sock, (struct sockaddr *)&si_host, sizeof(si_host)) == SOCKET_ERROR)
     {
         VitaMTP_Log(VitaMTP_ERROR, "cannot bind listening socket\n");
         free(host_response);
@@ -1062,7 +1126,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
         close(g_broadcast_command_fds[1]);
     }
     
-    if (socketpair(PF_LOCAL, SOCK_DGRAM, 0, g_broadcast_command_fds) < 0)
+    if (socketpair(PF_LOCAL, SOCK_DGRAM, 0, g_broadcast_command_fds) == SOCKET_ERROR)
     {
         VitaMTP_Log(VitaMTP_ERROR, "failed to create broadcast command socket pair\n");
     }
@@ -1077,7 +1141,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
         FD_SET(sock, &fd);
         FD_SET(g_broadcast_command_fds[0], &fd);
 
-        if (select(FD_SETSIZE, &fd, NULL, NULL, NULL) < 0)
+        if (select(FD_SETSIZE, &fd, NULL, NULL, NULL) == SOCKET_ERROR)
         {
             VitaMTP_Log(VitaMTP_ERROR, "Error polling broadcast socket\n");
             break;
@@ -1085,7 +1149,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
 
         if (FD_ISSET(g_broadcast_command_fds[0], &fd))
         {
-            if (recv(g_broadcast_command_fds[0], &cmd, sizeof(enum broadcast_command), 0) < sizeof(enum broadcast_command))
+            if (recv(g_broadcast_command_fds[0], (char *)&cmd, sizeof(enum broadcast_command), 0) < sizeof(enum broadcast_command))
             {
                 VitaMTP_Log(VitaMTP_ERROR, "Error recieving broadcast command. Stopping broadcast.\n");
                 cmd = BroadcastStop;
@@ -1166,19 +1230,19 @@ void VitaMTP_Stop_Broadcast(void)
     VitaMTP_Log(VitaMTP_DEBUG, "stopping broadcast\n");
     static const enum broadcast_command cmd = BroadcastStop;
 
-    if (g_broadcast_command_fds[1] < 0)
+    if (g_broadcast_command_fds[1] == INVALID_SOCKET)
     {
         VitaMTP_Log(VitaMTP_ERROR, "no broadcast in progress\n");
         return;
     }
 
-    if (send(g_broadcast_command_fds[1], &cmd, sizeof(cmd), 0) < sizeof(cmd))
+    if (send(g_broadcast_command_fds[1], (char *)&cmd, sizeof(cmd), 0) < sizeof(cmd))
     {
         VitaMTP_Log(VitaMTP_ERROR, "failed to send command to broadcast\n");
     }
     
     close(g_broadcast_command_fds[1]);
-    g_broadcast_command_fds[1] = -1;
+    g_broadcast_command_fds[1] = INVALID_SOCKET;
 }
 
 static inline void VitaMTP_Parse_Device_Headers(char *data, wireless_vita_info_t *info, char **p_host, char **p_pin)
@@ -1229,7 +1293,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
     struct sockaddr_in si_host;
     struct sockaddr_in si_client;
 
-    if ((s_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    if ((s_sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
     {
         VitaMTP_Log(VitaMTP_ERROR, "cannot create server socket\n");
         return -1;
@@ -1240,14 +1304,14 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
     si_host.sin_port = htons(info->port);
     si_host.sin_addr.s_addr = host_addr ? htonl(host_addr) : htonl(INADDR_ANY);
 
-    if (bind(s_sock, (struct sockaddr *)&si_host, sizeof(si_host)) < 0)
+    if (bind(s_sock, (struct sockaddr *)&si_host, sizeof(si_host)) == SOCKET_ERROR)
     {
         VitaMTP_Log(VitaMTP_ERROR, "cannot bind server socket\n");
         close(s_sock);
         return -1;
     }
 
-    if (listen(s_sock, SOMAXCONN) < 0)
+    if (listen(s_sock, SOMAXCONN) == SOCKET_ERROR)
     {
         VitaMTP_Log(VitaMTP_ERROR, "cannot listen on server socket\n");
         close(s_sock);
@@ -1277,7 +1341,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
 
         // use select for the timeout feature, ignore fd
         // s_sock+1 allows us to check fd "s_sock" but ignore the rest
-        if ((ret = select(s_sock+1, &fd, NULL, NULL, &time)) < 0)
+        if ((ret = select(s_sock+1, &fd, NULL, NULL, &time)) == SOCKET_ERROR)
         {
             VitaMTP_Log(VitaMTP_ERROR, "Error polling listener\n");
             break;
@@ -1295,7 +1359,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
 
         slen = sizeof(si_client);
 
-        if ((c_sock = accept(s_sock, (struct sockaddr *)&si_client, &slen)) < 0)
+        if ((c_sock = accept(s_sock, (struct sockaddr *)&si_client, &slen)) == SOCKET_ERROR)
         {
             VitaMTP_Log(VitaMTP_ERROR, "Error accepting connection\n");
             break;
@@ -1476,6 +1540,9 @@ void VitaMTP_Release_Wireless_Device(vita_device_t *device)
     ptp_free_params(device->params);
     free(device->params);
     free(device);
+#ifdef WIN32
+        wsa_cleanup();
+#endif
 }
 
 /**
@@ -1504,6 +1571,14 @@ vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsig
         VitaMTP_Log(VitaMTP_ERROR, "out of memory\n");
         return NULL;
     }
+
+#ifdef WIN32
+    if(!wsa_startup())
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "WSA init failed\n");
+        return NULL;
+    }
+#endif
 
     if (VitaMTP_Get_Wireless_Device(info, device, host_addr, is_cancelled, is_registered, create_register_pin, reg_complete) < 0)
     {
