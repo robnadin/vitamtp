@@ -16,6 +16,17 @@ AC_PROG_INSTALL
 AM_ICONV
 PKG_PROG_PKG_CONFIG
 
+# Check for mingw compiler platform
+AC_MSG_CHECKING([For MinGW32])
+case "$host" in
+  *-*-mingw*)
+    AC_MSG_RESULT([yes])
+    mingw_compiler=yes
+    ;;
+  *) AC_MSG_RESULT([no]) ;;
+esac
+AM_CONDITIONAL(COMPILE_MINGW32, [test "$mingw_compiler" = "yes"])
+
 # Optionally enable and check for doxygen
 AC_ARG_ENABLE([doxygen],
     AS_HELP_STRING([--enable-doxygen], [Build API documentation using Doxygen [default=no]]),
@@ -56,24 +67,13 @@ if test x"$ac_enable_usb" = "xyes" ; then
 fi
 AM_CONDITIONAL([ENABLE_WIRELESS], [test x"$ac_enable_wireless" = "xyes"])
 if test x"$ac_enable_wireless" = "xyes" ; then
-    case "$host" in
-        *-*-mingw*|*-*-cygwin*)
-        AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([Cannot find required networking header.])])
-        DEVICE_LDFLAGS="-lws2_32"
-        AC_SUBST(DEVICE_LDFLAGS)
-            ;;
-        *-*-linux*)
-        AC_CHECK_HEADERS([arpa/inet.h netinet/in.h sys/socket.h], [], [AC_MSG_ERROR([Cannot find required networking header.])])
+    # We use winsock2 with Windows
+    if test x"$mingw_compiler" != "xyes" ; then
+        AC_CHECK_HEADERS([arpa/inet.h netinet/in.h sys/select.h sys/socket.h], [], [AC_MSG_ERROR([Cannot find required networking header.])])
         AC_CHECK_FUNCS([select socket socketpair], [], [AC_MSG_ERROR([Cannot find required networking function.])])
-            ;;
-        *-*-darwin*)
-        AC_CHECK_HEADERS([arpa/inet.h netinet/in.h sys/socket.h], [], [AC_MSG_ERROR([Cannot find required networking header.])])
-        AC_CHECK_FUNCS([select socket socketpair], [], [AC_MSG_ERROR([Cannot find required networking function.])])
-            ;;
-        *)
-        AC_MSG_WARN([*** Please add $host to configure.ac checks!])
-            ;;
-    esac
+    else
+        AC_CHECK_HEADERS([winsock2.h], [], [AC_MSG_ERROR([Cannot find winsock2 headers.])])
+    fi
     DEVICE_CFLAGS="$DEVICE_CFLAGS -DPTP_IP_SUPPORT"
 fi
 AC_SUBST(DEVICE_CFLAGS)
@@ -91,32 +91,12 @@ AC_SUBST(PTHREAD_CFLAGS)
 AC_SUBST(PTHREAD_LIBS)
 
 # Checks for additional headers
-case "$host" in
-    *-*-mingw*|*-*-cygwin*)
-        AC_CHECK_HEADERS([errno.h fcntl.h iconv.h limits.h memory.h stdarg.h stddef.h stdlib.h string.h windows.h], [], [AC_MSG_ERROR([Cannot find required header.])])
-            ;;
-    *-*-linux*)
-        AC_CHECK_HEADERS([errno.h fcntl.h iconv.h limits.h memory.h stdarg.h stddef.h stdlib.h string.h sys/statvfs.h time.h unistd.h], [], [AC_MSG_ERROR([Cannot find required header.])])
-            ;;
-    *-*-darwin*)
-        AC_CHECK_HEADERS([errno.h fcntl.h iconv.h limits.h memory.h stdarg.h stddef.h stdlib.h string.h sys/statvfs.h time.h unistd.h], [], [AC_MSG_ERROR([Cannot find required header.])])
-            ;;
-    *)
-        AC_MSG_WARN([*** Please add $host to configure.ac checks!])
-        ;;
-esac
-
-# check OS type
-case "${host_os}" in
-  mingw*|windows*|winnt)
-    R_OS_WINDOWS="yes"
-    ;;
-  *)
-    R_OS_WINDOWS="no"
-    ;;
-esac
-
-AM_CONDITIONAL([R_OS_WINDOWS], [test $R_OS_WINDOWS = yes])
+AC_CHECK_HEADERS([errno.h fcntl.h iconv.h limits.h memory.h signal.h stdarg.h stddef.h stdlib.h string.h time.h unistd.h], [], [AC_MSG_ERROR([Cannot find required header.])])
+if test x"$mingw_compiler" != "xyes" ; then
+    AC_CHECK_HEADERS([dirent.h ftw.h sys/stat.h sys/statvfs.h], [], [AC_MSG_ERROR([Cannot find required header.])])
+else
+    AC_CHECK_HEADERS([windows.h], [], [AC_MSG_ERROR([Cannot find required header.])])
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE

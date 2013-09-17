@@ -27,7 +27,7 @@
 #include <time.h>
 #include "vitamtp.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "asprintf.h"
 #endif
 

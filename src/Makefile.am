@@ -28,10 +28,14 @@ REVISION=0
 SOVERSION=$(CURRENT):$(REVISION):$(AGE)
 LT_CURRENT_MINUS_AGE=`expr $(CURRENT) - $(AGE)`
 
+if COMPILE_MINGW32
+DEVICE_LDFLAGS=-lws2_32
+endif
+
 # shared library for installing
 lib_LTLIBRARIES=libvitamtp.la
 libvitamtp_la_SOURCES=vitamtp.h datautils.c device.c ptp.c usb.c vitamtp.c wireless.c
-if R_OS_WINDOWS
+if COMPILE_MINGW32
 libvitamtp_la_SOURCES += asprintf.c socketpair.c
 endif
 libvitamtp_la_CFLAGS=$(XML_CFLAGS) $(LIBUSB_CFLAGS) $(DEVICE_CFLAGS)  $(PTHREAD_CFLAGS) -std=gnu99 -fgnu89-inline

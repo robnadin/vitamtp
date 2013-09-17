@@ -4,7 +4,7 @@
 #include <iconv.h>
 #endif
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <arpa/inet.h>
 #else
 #include <winsock2.h>
