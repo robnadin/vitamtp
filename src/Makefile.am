@@ -30,7 +30,7 @@ LT_CURRENT_MINUS_AGE=`expr $(CURRENT) - $(AGE)`
 
 if COMPILE_MINGW32
 W32_CFLAGS=-D__USE_MINGW_ANSI_STDIO -mno-ms-bitfields
-W32_LIBS=-lws2_32
+W32_LDFLAGS=-lws2_32
 endif
 
 # shared library for installing
