@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #include "gphoto2-endian.h"
 #include "ptp.h"
 #include "vitamtp.h"
@@ -1182,18 +1182,6 @@ static int configure_usb_device(vita_raw_device_t *raw_device, vita_device_t *de
         return -1;
     }
 
-#ifdef __WIN32__
-
-    // Only needed on Windows, and cause problems on other platforms.
-    struct libusb_config_descriptor *config;
-    libusb_get_config_descriptor((libusb_device *)raw_device->data, 0, &config);
-    if (libusb_set_configuration(dev->usb_device.handle, config->bConfigurationValue))
-    {
-        VitaMTP_Log(VitaMTP_ERROR, "Failed to configure libusb device\n");
-        return -1;
-    }
-
-#endif
     // It seems like on kernel 2.6.31 if we already have it open on another
     // pthread in our app, we'll get an error if we try to claim it again,
     // but that error is harmless because our process already claimed the interface
