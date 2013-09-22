@@ -1382,7 +1382,6 @@ int VitaMTP_Get_USB_Vitas(vita_raw_device_t **p_raw_devices)
     }
 
     libusb_free_device_list(devs, 1);
-    // TODO: Find out when to call libusb_exit ()
     *p_raw_devices = vitas;
 
     return n;
@@ -1411,14 +1410,12 @@ vita_device_t *VitaMTP_Get_First_USB_Vita(void)
 
     if ((numdevs = VitaMTP_Get_USB_Vitas(&devices)) < 0)
     {
-        libusb_exit(g_usb_context);
         return NULL;
     }
 
     if (devices == NULL || numdevs == 0)
     {
         free(devices);
-        libusb_exit(g_usb_context);
         return NULL;
     }
 
