@@ -973,6 +973,8 @@ static int VitaMTP_Data_Connect(vita_device_t *device)
         return -1;
     }
 
+    device->device_type = VitaDeviceWireless;
+
     return 0;
 }
 
