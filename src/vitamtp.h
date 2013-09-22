@@ -728,7 +728,6 @@ void VitaMTP_Release_USB_Device(vita_device_t *device);
 int VitaMTP_Get_USB_Vitas(vita_raw_device_t **p_raw_devices);
 void VitaMTP_Unget_USB_Vitas(vita_raw_device_t *raw_devices, int numdevs);
 vita_device_t *VitaMTP_Get_First_USB_Vita(void);
-void VitaMTP_Close_USB_Vita(void);
 
 /**
  * Funcions for wireless devices
@@ -805,7 +804,7 @@ int VitaMTP_Data_Free_Capability(capability_info_t *info);
 /**
  * Funtions to initialize/cleanup the library
  */
-void VitaMTP_Init(void);
+int VitaMTP_Init(void);
 void VitaMTP_Cleanup(void);
 
 #ifdef __cplusplus

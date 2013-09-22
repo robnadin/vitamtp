@@ -184,7 +184,6 @@ int VitaMTP_Data_Info_From_XML(vita_info_t *vita_info, const char *raw_data, con
     }
 
     xmlFreeDoc(doc);
-    xmlCleanupParser();
 
     return 0;
 }
@@ -340,7 +339,6 @@ int VitaMTP_Data_Settings_From_XML(settings_info_t **p_settings_info, const char
     }
 
     xmlFreeDoc(doc);
-    xmlCleanupParser();
     *p_settings_info = settings_info;
 
     return 0;

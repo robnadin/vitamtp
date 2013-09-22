@@ -52,6 +52,9 @@ void VitaMTP_Set_Logging(int logmask)
 extern void VitaMTP_Data_Init(void);
 extern void VitaMTP_Data_Cleanup(void);
 
+extern int VitaMTP_USB_Init(void);
+extern void VitaMTP_USB_Exit(void);
+
 // since we don't have access to private fields
 extern inline PTPParams *VitaMTP_Get_PTP_Params(vita_device_t *device);
 
@@ -919,11 +922,16 @@ void VitaMTP_RegisterCancelEventId(uint32_t event_id)
 /**
  * Call this function in your "main" thread before using any other function from this library
  */
-void VitaMTP_Init(void)
+int VitaMTP_Init(void)
 {
+    if(VitaMTP_USB_Init() < 0)
+    {
+        return -1;
+    }
     VitaMTP_Data_Init();
     pthread_mutex_init(&g_event_mutex, NULL);
     pthread_mutex_init(&g_cancel_mutex, NULL);
+    return 0;
 }
 
 /**
@@ -934,4 +942,5 @@ void VitaMTP_Cleanup(void)
     pthread_mutex_destroy(&g_event_mutex);
     pthread_mutex_destroy(&g_cancel_mutex);
     VitaMTP_Data_Cleanup();
+    VitaMTP_USB_Exit();
 }

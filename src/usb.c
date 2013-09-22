@@ -1309,12 +1309,6 @@ int VitaMTP_Get_USB_Vitas(vita_raw_device_t **p_raw_devices)
     libusb_device *dev;
     libusb_device **devs;
 
-    if (libusb_init(&g_usb_context) < 0)
-    {
-        VitaMTP_Log(VitaMTP_ERROR, "libusb init failed.\n");
-        return -1;
-    }
-
     if (libusb_get_device_list(g_usb_context, &devs) < 0)
     {
         VitaMTP_Log(VitaMTP_ERROR, "libusb failed to get device list.\n");
@@ -1434,9 +1428,27 @@ vita_device_t *VitaMTP_Get_First_USB_Vita(void)
     return first_device;
 }
 
-void VitaMTP_Close_USB_Vita(void)
+/**
+ * Call libusb_init only once so the thread spamming from calling get_usb_vita every second can
+ * be avoided
+ */
+int VitaMTP_USB_Init(void)
 {
+#ifdef PTP_USB_SUPPORT
+    if (libusb_init(&g_usb_context) < 0)
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "libusb init failed.\n");
+        return -1;
+    }
+#endif
+    return 0;
+}
+
+void VitaMTP_USB_Exit(void)
+{
+#ifdef PTP_USB_SUPPORT
     libusb_exit(g_usb_context);
+#endif
 }
 
 
