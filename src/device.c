@@ -181,6 +181,10 @@ void VitaMTP_Release_Device(vita_device_t *device)
     {
         VitaMTP_Release_Wireless_Device(device);
     }
+    else
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "The device does not have a type assigned!\n");
+    }
 }
 
 /**

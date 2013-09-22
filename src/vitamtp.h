@@ -699,9 +699,9 @@ typedef int (* VitaMTP_progressfunc_t)(uint64_t const sent, uint64_t const total
     do { \
         if (MASK_SET (g_VitaMTP_logmask, mask)) { \
             if (mask == VitaMTP_DEBUG) { \
-                fprintf(stdout, "VitaMTP %s[%d]: " format, __FUNCTION__, __LINE__, ##args); \
+                fprintf(stderr, "VitaMTP %s[%d]: " format, __FUNCTION__, __LINE__, ##args); \
             } else { \
-                fprintf(stdout, "VitaMTP: " format, ##args); \
+                fprintf(stderr, "VitaMTP: " format, ##args); \
             } \
         } \
     } while (0)
