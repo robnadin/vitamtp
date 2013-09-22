@@ -358,6 +358,7 @@ int VitaMTP_Data_Free_Settings(settings_info_t *settings_info)
     for (account = &settings_info->current_account; account != NULL; account = account->next_account)
     {
         free(lastAccount);
+        free(account->userName);
         free(account->accountId);
         free(account->birthday);
         free(account->countryCode);
@@ -603,7 +604,7 @@ int VitaMTP_Data_Capability_To_XML(const capability_info_t *info, char **p_data,
     // TODO: Actually code this
     // it isn't important because the Vita doesn't use it
     const char *str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><capabilityInfo version=\"1.0\"></capabilityInfo>";
-    *p_data = VitaMTP_Data_Add_Size_Header(strdup(str), (int)strlen(str) + 1);
+    *p_data = VitaMTP_Data_Add_Size_Header(str, (int)strlen(str) + 1);
     *p_len = (int)strlen(str) + sizeof(uint32_t) + 1;
     return 0;
 }
