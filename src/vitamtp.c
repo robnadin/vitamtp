@@ -49,6 +49,9 @@ void VitaMTP_Set_Logging(int logmask)
     g_VitaMTP_logmask = logmask;
 }
 
+extern void VitaMTP_Data_Init(void);
+extern void VitaMTP_Data_Cleanup(void);
+
 // since we don't have access to private fields
 extern inline PTPParams *VitaMTP_Get_PTP_Params(vita_device_t *device);
 
@@ -911,4 +914,24 @@ uint16_t VitaMTP_SendPCCapabilityInfo(vita_device_t *device, capability_info_t *
 void VitaMTP_RegisterCancelEventId(uint32_t event_id)
 {
     g_register_cancel_id = event_id;
+}
+
+/**
+ * Call this function in your "main" thread before using any other function from this library
+ */
+void VitaMTP_Init(void)
+{
+    VitaMTP_Data_Init();
+    pthread_mutex_init(&g_event_mutex, NULL);
+    pthread_mutex_init(&g_cancel_mutex, NULL);
+}
+
+/**
+ * Call it to clean the internal library allocations
+ */
+void VitaMTP_Cleanup(void)
+{
+    pthread_mutex_destroy(&g_event_mutex);
+    pthread_mutex_destroy(&g_cancel_mutex);
+    VitaMTP_Data_Cleanup();
 }

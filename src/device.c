@@ -181,7 +181,6 @@ void VitaMTP_Release_Device(vita_device_t *device)
     {
         VitaMTP_Release_Wireless_Device(device);
     }
-    pthread_mutex_destroy(&g_event_mutex);
 }
 
 /**
@@ -241,7 +240,6 @@ PTPParams *VitaMTP_Get_PTP_Params(vita_device_t *device)
 const char *VitaMTP_Get_Identification(vita_device_t *device)
 {
     return device->identification;
-    pthread_mutex_init(&g_event_mutex, NULL);
 }
 
 /**

@@ -621,3 +621,13 @@ int VitaMTP_Data_Free_Capability(capability_info_t *info)
     free(info);
     return 0;
 }
+
+void VitaMTP_Data_Init(void)
+{
+    xmlInitParser();
+}
+
+void VitaMTP_Data_Cleanup(void)
+{
+    xmlCleanupParser();
+}
