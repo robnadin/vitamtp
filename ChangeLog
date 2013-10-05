@@ -1,3 +1,9 @@
+vitamtp (2.0.1) precise; urgency=low
+
+  * Increase udev rule priority
+
+ -- codestation <codestation404@gmail.com>  Fri, 4 Oct 2013 14:12:32 -0700
+
 vitamtp (2.0.0) precise; urgency=low
 
   * Added wireless device support
