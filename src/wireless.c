@@ -34,6 +34,7 @@
 #ifndef _WIN32
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <unistd.h>
@@ -849,6 +850,11 @@ VitaMTP_PTPIP_Connect(PTPParams *params, struct sockaddr_in *saddr, int port)
         close(params->cmdfd);
         return -1;
     }
+
+    // disable nagle algorithm to improve performance and stability of local wireless transfers
+    int optval = 1;
+    setsockopt(params->cmdfd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
+    setsockopt(params->evtfd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
 
     if (SOCKET_ERROR == connect(params->cmdfd, (struct sockaddr *)saddr, sizeof(struct sockaddr_in)))
     {
