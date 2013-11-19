@@ -45,8 +45,8 @@ AM_CONDITIONAL(HAVE_DOXYGEN,$HAVE_DOXYGEN)
 
 # Allow user to disable building OpenCMA
 AC_ARG_ENABLE([opencma],
-    AS_HELP_STRING([--enable-opencma[=type]], [Build type OpenCMA program (no,dynamic,static) [default=dynamic]]),
-    [ac_enable_opencma=$enableval], [ac_enable_opencma=dynamic])
+    AS_HELP_STRING([--enable-opencma[=type]], [Build type OpenCMA program (no,dynamic,static) [default=no]]),
+    [ac_enable_opencma=$enableval], [ac_enable_opencma=no])
 AM_CONDITIONAL([BUILD_OPENCMA], [test "x$ac_enable_opencma" != "xno"])
 AM_CONDITIONAL([STATIC_OPENCMA], [test "x$ac_enable_opencma" != "xdynamic"])
 
