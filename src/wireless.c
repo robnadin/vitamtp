@@ -1037,8 +1037,10 @@ static int VitaMTP_Sock_Read_All(int sockfd, unsigned char **p_data, size_t *p_l
             VitaMTP_hex_dump(buffer, (unsigned int)clen, 16);
         }
 
-        data = realloc(data, len+clen);
-        memcpy(data+len, buffer, clen);
+        // add an extra byte to create a null terminated buffer to be used in strtok funcs.
+        data = realloc(data, len + clen + 1);
+        memcpy(data + len, buffer, clen);
+        data[len + clen] = '\0';
         len += clen;
     }
 
