@@ -62,6 +62,8 @@ struct vita_info
 {
     char responderVersion[6]; // max: XX.XX\0
     int protocolVersion;
+    char *onlineId;
+    char *modelInfo;
     struct
     {
         int type;
@@ -789,7 +791,7 @@ void VitaMTP_RegisterCancelEventId(uint32_t event_id);
 /**
  * Functions to parse data
  */
-char *VitaMTP_Data_Add_Size_Header(char *orig, uint32_t len);
+char *VitaMTP_Data_Add_Size_Header(const char *orig, uint32_t len);
 char *VitaMTP_Data_Make_Timestamp(long time);
 int VitaMTP_Data_Info_From_XML(vita_info_t *vita_info, const char *raw_data, const int len);
 int VitaMTP_Data_Initiator_To_XML(const initiator_info_t *p_initiator_info, char **data, int *len);
@@ -801,6 +803,7 @@ int VitaMTP_Data_Metadata_To_XML(const metadata_t *p_metadata, char **data, int 
 int VitaMTP_Data_Capability_From_XML(capability_info_t **p_info, const char *data, int len);
 int VitaMTP_Data_Capability_To_XML(const capability_info_t *info, char **p_data, int *p_len);
 int VitaMTP_Data_Free_Capability(capability_info_t *info);
+int VitaMTP_Data_Free_VitaInfo(vita_info_t *info);
 
 /**
  * Funtions to initialize/cleanup the library

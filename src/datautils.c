@@ -42,7 +42,7 @@ extern int g_VitaMTP_logmask;
  * @return a new array containing the data plus the header.
  *  The new array is dynamically allocated and must be freed when done.
  */
-char *VitaMTP_Data_Add_Size_Header(char *orig, uint32_t len)
+char *VitaMTP_Data_Add_Size_Header(const char *orig, uint32_t len)
 {
     char *new_data;
     int tot_len = len + sizeof(uint32_t); // room for header
@@ -113,10 +113,18 @@ int VitaMTP_Data_Info_From_XML(vita_info_t *vita_info, const char *raw_data, con
         return 1;
     }
 
+    xmlChar *onlineId = xmlGetProp(node, BAD_CAST "onlineId");
+    vita_info->onlineId = onlineId ? strdup(onlineId) : NULL;
+
+    xmlChar *modelInfo = xmlGetProp(node, BAD_CAST "modelInfo");
+    vita_info->modelInfo = onlineId ? strdup(modelInfo) : NULL;
+
     strcpy(vita_info->responderVersion, (char *)responderVersion);
     vita_info->protocolVersion = atoi((char *)protocolVersion);
     xmlFree(responderVersion);
     xmlFree(protocolVersion);
+    xmlFree(onlineId);
+    xmlFree(modelInfo);
 
     // get thumb info
     if ((node = node->children) == NULL)
@@ -618,6 +626,19 @@ int VitaMTP_Data_Capability_To_XML(const capability_info_t *info, char **p_data,
 int VitaMTP_Data_Free_Capability(capability_info_t *info)
 {
     free(info);
+    return 0;
+}
+
+/**
+ * Frees vita_info_t that is created
+ * by VitaMTP_GetVitaInfo().
+ *
+ * @param info structure to free.
+ */
+int VitaMTP_Data_Free_VitaInfo(vita_info_t *info)
+{
+    free(info->onlineId);
+    free(info->modelInfo);
     return 0;
 }
 
