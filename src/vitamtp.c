@@ -924,10 +924,14 @@ void VitaMTP_RegisterCancelEventId(uint32_t event_id)
  */
 int VitaMTP_Init(void)
 {
+
+#ifdef PTP_USB_SUPPORT
     if(VitaMTP_USB_Init() < 0)
     {
         return -1;
     }
+#endif
+
     VitaMTP_Data_Init();
     pthread_mutex_init(&g_event_mutex, NULL);
     pthread_mutex_init(&g_cancel_mutex, NULL);
@@ -942,5 +946,9 @@ void VitaMTP_Cleanup(void)
     pthread_mutex_destroy(&g_event_mutex);
     pthread_mutex_destroy(&g_cancel_mutex);
     VitaMTP_Data_Cleanup();
+
+#ifdef PTP_USB_SUPPORT
     VitaMTP_USB_Exit();
+#endif
+
 }
