@@ -96,6 +96,7 @@ extern volatile uint32_t g_canceltask_event_id;
 extern volatile int g_event_cancelled;
 extern volatile int g_canceltask_set;
 
+static int g_cancel_fds[2] = {-1, -1};
 extern pthread_mutex_t g_event_mutex;
 
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
@@ -1308,8 +1309,8 @@ static inline void VitaMTP_Parse_Device_Headers(char *data, wireless_vita_info_t
 }
 
 static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t *device, unsigned int host_addr,
-                                       cancel_callback_t is_cancelled, device_registered_callback_t is_registered,
-                                       register_device_callback_t create_register_pin, device_reg_complete_callback_t reg_complete)
+                                       device_registered_callback_t is_registered, register_device_callback_t create_register_pin,
+                                       device_reg_complete_callback_t reg_complete)
 {
     int s_sock;
     unsigned int slen;
@@ -1350,8 +1351,14 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
         return -1;
     }
 
+    if(socketpair(PF_LOCAL, SOCK_DGRAM, IPPROTO_IP, g_cancel_fds) == SOCKET_ERROR)
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "failed to create command socket pair\n");
+        close(s_sock);
+        return -1;
+    }
+
     fd_set fd;
-    struct timeval time = {0};
     int ret;
     int c_sock = INVALID_SOCKET;
     char *data = NULL;
@@ -1361,32 +1368,41 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
     int pin = -1;
     int listen = 1;
     memset(device, 0, sizeof(vita_device_t));
+    int max_fds = s_sock > g_cancel_fds[0] ? s_sock : g_cancel_fds[0];
     VitaMTP_Log(VitaMTP_DEBUG, "waiting for connection\n");
 
     while (listen)
     {
         FD_ZERO(&fd);
         FD_SET(s_sock, &fd);
-
-        time.tv_sec = 1;
-        time.tv_usec = 0;
+        FD_SET(g_cancel_fds[0], &fd);
 
         // use select for the timeout feature, ignore fd
         // s_sock+1 allows us to check fd "s_sock" but ignore the rest
-        if ((ret = select(s_sock+1, &fd, NULL, NULL, &time)) == SOCKET_ERROR)
+        if ((ret = select(max_fds+1, &fd, NULL, NULL, NULL)) == SOCKET_ERROR)
         {
             VitaMTP_Log(VitaMTP_ERROR, "Error polling listener\n");
             break;
         }
-        else if (is_cancelled())
+
+        if (FD_ISSET(g_cancel_fds[0], &fd))
         {
-            VitaMTP_Log(VitaMTP_INFO, "Listening cancelled by user\n");
-            break;
-        }
-        else if (ret == 0)
-        {
-            VitaMTP_Log(VitaMTP_DEBUG, "Listening timed out.\n");
-            continue;
+            int cancel_flag = 0;
+            if (recv(g_cancel_fds[0], (char *)&cancel_flag, sizeof(cancel_flag), 0) < sizeof(cancel_flag))
+            {
+                VitaMTP_Log(VitaMTP_ERROR, "Error recieving cancel flag. Stopping connection.\n");
+                cancel_flag = 1;
+            }
+
+            if (cancel_flag == 1)
+            {
+                VitaMTP_Log(VitaMTP_INFO, "Listening cancelled by user\n");
+                break;
+            }
+            else
+            {
+                VitaMTP_Log(VitaMTP_ERROR, "Unknown cancel flag recieved: %d\n", cancel_flag);
+            }
         }
 
         slen = sizeof(si_client);
@@ -1536,13 +1552,19 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
 
     free(data);
     close(c_sock);
-    sleep(1);
+    //sleep(1);
     close(s_sock);
+
+    close(g_cancel_fds[0]);
+    close(g_cancel_fds[1]);
+    g_cancel_fds[0] = -1;
+    g_cancel_fds[1] = -1;
 
     if (device->network_device.addr.sin_addr.s_addr > 0)
     {
         // we found a device to connect to
         VitaMTP_Log(VitaMTP_DEBUG, "Beginning connection\n");
+        sleep(1);
         return VitaMTP_Data_Connect(device);
     }
     else
@@ -1594,8 +1616,8 @@ void VitaMTP_Release_Wireless_Device(vita_device_t *device)
  *          an error code must be written to the second paramater of the callback.
  * @return a device pointer. NULL if error, no connected device, or no connected Vita
  */
-vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, cancel_callback_t is_cancelled,
-        device_registered_callback_t is_registered, register_device_callback_t create_register_pin, device_reg_complete_callback_t reg_complete)
+vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, device_registered_callback_t is_registered,
+                                               register_device_callback_t create_register_pin, device_reg_complete_callback_t reg_complete)
 {
     vita_device_t *device = malloc(sizeof(vita_device_t));
 
@@ -1605,7 +1627,7 @@ vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsig
         return NULL;
     }
 
-    if (VitaMTP_Get_Wireless_Device(info, device, host_addr, is_cancelled, is_registered, create_register_pin, reg_complete) < 0)
+    if (VitaMTP_Get_Wireless_Device(info, device, host_addr, is_registered, create_register_pin, reg_complete) < 0)
     {
         VitaMTP_Log(VitaMTP_ERROR, "error locating Vita\n");
         free(device);
@@ -1622,6 +1644,28 @@ vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsig
 int VitaMTP_Get_Device_IP(vita_device_t *device)
 {
     return device->network_device.addr.sin_addr.s_addr;
+}
+
+void VitaMTP_Cancel_Get_Wireless_Vita(void)
+{
+    if (g_cancel_fds[1] == INVALID_SOCKET)
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "no wireless search in progress\n");
+        return;
+    }
+
+    int cancel_flag = 1;
+    if (send(g_cancel_fds[1], (char *)&cancel_flag, sizeof(cancel_flag), 0) < sizeof(cancel_flag))
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "failed to send command to stop wireless search");
+    }
+
+    close(g_cancel_fds[1]);
+    g_cancel_fds[1] = INVALID_SOCKET;
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
 }
 
 #endif // ifdef PTP_IP_SUPPORT

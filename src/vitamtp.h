@@ -738,9 +738,10 @@ vita_device_t *VitaMTP_Get_First_USB_Vita(void);
 int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr);
 void VitaMTP_Stop_Broadcast(void);
 void VitaMTP_Release_Wireless_Device(vita_device_t *device);
-vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, cancel_callback_t is_cancelled,
-        device_registered_callback_t is_registered, register_device_callback_t create_register_pin, device_reg_complete_callback_t reg_complete);
+vita_device_t *VitaMTP_Get_First_Wireless_Vita(wireless_host_info_t *info, unsigned int host_addr, device_registered_callback_t is_registered,
+                                               register_device_callback_t create_register_pin, device_reg_complete_callback_t reg_complete);
 int VitaMTP_Get_Device_IP(vita_device_t *device);
+void VitaMTP_Cancel_Get_Wireless_Vita(void);
 
 /**
  * Functions to handle MTP commands
