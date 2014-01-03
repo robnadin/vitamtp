@@ -44,12 +44,29 @@ WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH 
 
 #include <string.h>
 
-#include <winsock2.h>
-#include <windows.h>
-#include <io.h>
-#include <ws2tcpip.h>
+#ifdef WIN32
+# include <winsock2.h>
+# include <windows.h>
+# include <io.h>
 
-int socketpair(int domain, int type, int protocol, SOCKET socks[2])
+typedef int socklen_t;
+
+#else
+# include <sys/types.h>
+# include <sys/socket.h>
+#endif
+
+#ifdef WIN32
+
+/* dumb_socketpair:
+ *   If make_overlapped is nonzero, both sockets created will be usable for
+ *   "overlapped" operations via WSASend etc.  If make_overlapped is zero,
+ *   socks[0] (only) will be usable with regular ReadFile etc., and thus
+ *   suitable for use as stdin or stdout of a child process.  Note that the
+ *   sockets must be closed with closesocket() regardless.
+ */
+
+int dumb_socketpair(SOCKET socks[2], int make_overlapped)
 {
     union {
        struct sockaddr_in inaddr;
@@ -58,7 +75,7 @@ int socketpair(int domain, int type, int protocol, SOCKET socks[2])
     SOCKET listener;
     int e;
     socklen_t addrlen = sizeof(a.inaddr);
-    DWORD flags = WSA_FLAG_OVERLAPPED;
+    DWORD flags = (make_overlapped ? WSA_FLAG_OVERLAPPED : 0);
     int reuse = 1;
 
     if (socks == 0) {
@@ -66,7 +83,7 @@ int socketpair(int domain, int type, int protocol, SOCKET socks[2])
       return SOCKET_ERROR;
     }
 
-    listener = socket(domain, type, protocol);
+    listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (listener == INVALID_SOCKET)
         return SOCKET_ERROR;
 
@@ -94,7 +111,7 @@ int socketpair(int domain, int type, int protocol, SOCKET socks[2])
         if (listen(listener, 1) == SOCKET_ERROR)
             break;
 
-        socks[0] = WSASocket(domain, type, protocol, NULL, 0, flags);
+        socks[0] = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, flags);
         if (socks[0] == INVALID_SOCKET)
             break;
         if (connect(socks[0], &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
@@ -116,3 +133,10 @@ int socketpair(int domain, int type, int protocol, SOCKET socks[2])
     WSASetLastError(e);
     return SOCKET_ERROR;
 }
+#else
+int dumb_socketpair(int socks[2], int dummy)
+{
+    (void) dummy;
+    return socketpair(AF_LOCAL, SOCK_STREAM, 0, socks);
+}
+#endif

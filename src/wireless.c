@@ -1145,8 +1145,12 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
     {
         close(g_broadcast_command_fds[1]);
     }
-    
-    if (socketpair(PF_LOCAL, SOCK_DGRAM, IPPROTO_IP, g_broadcast_command_fds) == SOCKET_ERROR)
+
+#ifndef _WIN32
+    if(socketpair(PF_LOCAL, SOCK_DGRAM, IPPROTO_IP, g_broadcast_command_fds) == SOCKET_ERROR)
+#else
+    if(dumb_socketpair(g_broadcast_command_fds, 1) == SOCKET_ERROR)
+#endif
     {
         VitaMTP_Log(VitaMTP_ERROR, "failed to create broadcast command socket pair\n");
     }
@@ -1351,7 +1355,11 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
         return -1;
     }
 
+#ifndef _WIN32
     if(socketpair(PF_LOCAL, SOCK_DGRAM, IPPROTO_IP, g_cancel_fds) == SOCKET_ERROR)
+#else
+    if(dumb_socketpair(g_cancel_fds, 1) == SOCKET_ERROR)
+#endif
     {
         VitaMTP_Log(VitaMTP_ERROR, "failed to create command socket pair\n");
         close(s_sock);

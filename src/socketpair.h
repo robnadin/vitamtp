@@ -1,4 +1,4 @@
-/* socketpair.h
+/* socketpair.c
 Copyright 2007, 2010 by Nathan C. Myers <ncm@cantrip.org>
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -24,4 +24,4 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
 WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-int socketpair(int domain, int type, int protocol, SOCKET socks[2]);
+int dumb_socketpair(SOCKET socks[2], int make_overlapped);
