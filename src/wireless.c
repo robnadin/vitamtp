@@ -40,7 +40,6 @@
 #include <unistd.h>
 #else
 #include <winsock2.h>
-#include <windows.h>
 #endif
 
 // windows doesn't have those functions
@@ -57,7 +56,6 @@
 typedef int socklen_t;
 #define PF_LOCAL PF_INET
 #define MSG_DONTWAIT 0
-#define EWOULDBLOCK WSAEWOULDBLOCK
 #define close(s) closesocket(s)
 #endif
 
@@ -98,6 +96,8 @@ extern volatile int g_canceltask_set;
 
 static int g_cancel_fds[2] = {-1, -1};
 extern pthread_mutex_t g_event_mutex;
+extern read_callback_t read_callback_func;
+extern read_callback_t write_callback_func;
 
 void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int num);
 
@@ -385,7 +385,14 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
             type    = PTPIP_END_DATA_PACKET;
         }
 
-        ret = handler->getfunc(params, handler->priv, towrite, &xdata[ptpip_data_payload+8], &xtowrite);
+        if(read_callback_func)
+        {
+            ret = read_callback_func(&xdata[ptpip_data_payload+8], towrite, &xtowrite);
+        }
+        else
+        {
+            ret = handler->getfunc(params, handler->priv, towrite, &xdata[ptpip_data_payload+8], &xtowrite);
+        }
 
         if (ret == -1)
         {
@@ -492,9 +499,14 @@ ptp_ptpip_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
                 break;
             }
 
-            xret = handler->putfunc(params, handler->priv,
-                                    datalen, xdata+ptpip_data_payload, &written
-                                   );
+            if(write_callback_func)
+            {
+                xret = write_callback_func(xdata+ptpip_data_payload, datalen, &written);
+            }
+            else
+            {
+                xret = handler->putfunc(params, handler->priv, datalen, xdata+ptpip_data_payload, &written);
+            }
 
             if (xret == -1)
             {
@@ -521,9 +533,14 @@ ptp_ptpip_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
                 break;
             }
 
-            xret = handler->putfunc(params, handler->priv,
-                                    datalen, xdata+ptpip_data_payload, &written
-                                   );
+            if(write_callback_func)
+            {
+                xret = write_callback_func(xdata+ptpip_data_payload, datalen, &written);
+            }
+            else
+            {
+                xret = handler->putfunc(params, handler->priv, datalen, xdata+ptpip_data_payload, &written);
+            }
 
             if (xret == -1)
             {
@@ -854,8 +871,8 @@ VitaMTP_PTPIP_Connect(PTPParams *params, struct sockaddr_in *saddr, int port)
 
     // disable nagle algorithm to improve performance and stability of local wireless transfers
     int optval = 1;
-    setsockopt(params->cmdfd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
-    setsockopt(params->evtfd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
+    setsockopt(params->cmdfd, IPPROTO_TCP, TCP_NODELAY, (const char *)&optval, sizeof(optval));
+    setsockopt(params->evtfd, IPPROTO_TCP, TCP_NODELAY, (const char *)&optval, sizeof(optval));
 
     if (SOCKET_ERROR == connect(params->cmdfd, (struct sockaddr *)saddr, sizeof(struct sockaddr_in)))
     {

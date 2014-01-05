@@ -478,10 +478,12 @@ typedef struct copy_confirmation_info copy_confirmation_info_t;
 typedef struct capability_info capability_info_t;
 typedef struct wireless_host_info wireless_host_info_t;
 typedef struct wireless_vita_info wireless_vita_info_t;
-typedef int (*cancel_callback_t)(void);
+
 typedef int (*device_registered_callback_t)(const char *deviceid);
 typedef int (*register_device_callback_t)(wireless_vita_info_t *info, int *p_err);
 typedef void (*device_reg_complete_callback_t)(void);
+typedef int (*read_callback_t)(unsigned char *data, unsigned long wantlen, unsigned long *gotlen);
+typedef int (*write_callback_t)(const unsigned char *data, unsigned long size, unsigned long *written);
 
 /**
  * The callback type definition. Notice that a progress percentage ratio
@@ -782,8 +784,13 @@ uint16_t VitaMTP_CancelTask(vita_device_t *device, uint32_t cancel_event_id);
 uint16_t VitaMTP_KeepAlive(vita_device_t *device, uint32_t event_id);
 uint16_t VitaMTP_SendObject(vita_device_t *device, uint32_t *parenthandle, uint32_t *p_handle, metadata_t *p_meta,
                             unsigned char *data);
+uint16_t VitaMTP_SendObject_Callback(vita_device_t *device, uint32_t *parenthandle, uint32_t *p_handle, metadata_t *p_meta,
+                            read_callback_t read_callback);
 uint16_t VitaMTP_GetObject(vita_device_t *device, uint32_t handle, metadata_t *meta, void **p_data,
                            unsigned int *p_len);
+uint16_t VitaMTP_GetObject_Callback(vita_device_t *device, uint32_t handle, uint64_t *size, write_callback_t write_callback);
+uint16_t VitaMTP_GetObject_Info(vita_device_t *device, uint32_t handle, char **name, int *dataType);
+uint16_t VitaMTP_GetObject_Folder(vita_device_t *device, uint32_t handle, uint32_t **p_handles, unsigned int *p_len);
 uint16_t VitaMTP_CheckExistance(vita_device_t *device, uint32_t handle, existance_object_t *existance);
 uint16_t VitaMTP_GetVitaCapabilityInfo(vita_device_t *device, capability_info_t **p_info);
 uint16_t VitaMTP_SendPCCapabilityInfo(vita_device_t *device, capability_info_t *info);

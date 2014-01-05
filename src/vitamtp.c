@@ -29,6 +29,8 @@ volatile uint32_t g_register_cancel_id = 0;
 volatile uint32_t g_canceltask_event_id = 0;
 volatile int g_event_cancelled = 0;
 volatile int g_canceltask_set = 0;
+volatile read_callback_t read_callback_func = NULL;
+volatile write_callback_t write_callback_func = NULL;
 
 pthread_mutex_t g_event_mutex;
 pthread_mutex_t g_cancel_mutex;
@@ -740,6 +742,60 @@ uint16_t VitaMTP_SendObject(vita_device_t *device, uint32_t *p_parenthandle, uin
     return ret;
 }
 
+uint16_t VitaMTP_SendObject_Callback(vita_device_t *device, uint32_t *p_parenthandle, uint32_t *p_handle, metadata_t *meta,
+                            read_callback_t read_callback)
+{
+    uint32_t store = VITA_STORAGE_ID;
+    uint16_t ret;
+    PTPObjectInfo objectinfo;
+    memset(&objectinfo, 0x0, sizeof(PTPObjectInfo));
+
+    objectinfo.StorageID = store;
+    objectinfo.ParentObject = *p_parenthandle;
+    objectinfo.Filename = meta->name;
+
+    pthread_mutex_lock(&g_cancel_mutex);
+
+    if (meta->dataType & Folder)
+    {
+        objectinfo.ObjectFormat = PTP_OFC_Association; // 0x3001
+        objectinfo.AssociationType = PTP_AT_GenericFolder;
+        ret = ptp_sendobjectinfo(VitaMTP_Get_PTP_Params(device), &store, p_parenthandle, p_handle, &objectinfo);
+    }
+    else if (meta->dataType & File)
+    {
+        if (meta->dataType & SaveData)
+        {
+            objectinfo.ObjectFormat = PTP_OFC_PSPSave; // 0xB00A
+        }
+        else
+        {
+            objectinfo.ObjectFormat = PTP_OFC_Undefined;
+        }
+
+        objectinfo.ObjectCompressedSize = (uint32_t)meta->size;
+        objectinfo.CaptureDate = meta->dateTimeCreated;
+        objectinfo.ModificationDate = meta->dateTimeCreated;
+        ret = ptp_sendobjectinfo(VitaMTP_Get_PTP_Params(device), &store, p_parenthandle, p_handle, &objectinfo);
+
+        if (ret == PTP_RC_OK)
+        {
+            read_callback_func = read_callback;
+            ret = ptp_sendobject(VitaMTP_Get_PTP_Params(device), NULL, (uint32_t)meta->size);
+            read_callback_func = NULL;
+        }
+    }
+    else
+    {
+        // unsupported
+        ret = PTP_RC_OperationNotSupported;
+    }
+
+    pthread_mutex_unlock(&g_cancel_mutex);
+
+    return ret;
+}
+
 /**
  * Gets a PTP object from the device along with metadata.
  * If object is a handle, *p_data will be a uint32_t array
@@ -807,6 +863,66 @@ uint16_t VitaMTP_GetObject(vita_device_t *device, uint32_t handle, metadata_t *m
     }
 
     meta->handle = handle;
+    return ret;
+}
+
+uint16_t VitaMTP_GetObject_Info(vita_device_t *device, uint32_t handle, char **name, int *dataType)
+{
+    PTPPropertyValue value;
+    uint16_t ret;
+
+    if ((ret = ptp_mtp_getobjectpropvalue(VitaMTP_Get_PTP_Params(device), handle, PTP_OPC_ObjectFormat, &value,
+                                          PTP_DTC_UINT16)) != PTP_RC_OK)
+    {
+        return ret;
+    }
+
+    *dataType = value.u16 == PTP_OFC_Association ? Folder : File;
+
+    if ((ret = ptp_mtp_getobjectpropvalue(VitaMTP_Get_PTP_Params(device), handle, PTP_OPC_ObjectFileName, &value,
+                                          PTP_DTC_STR)) != PTP_RC_OK)
+    {
+        return ret;
+    }
+
+    *name = value.str;
+
+    return PTP_RC_OK;
+}
+
+uint16_t VitaMTP_GetObject_Folder(vita_device_t *device, uint32_t handle, uint32_t **p_handles, unsigned int *p_len)
+{
+    uint32_t store = VITA_STORAGE_ID;
+    PTPObjectHandles handles;
+    uint16_t ret;
+
+    if ((ret = ptp_getobjecthandles(VitaMTP_Get_PTP_Params(device), store, 0, handle, &handles)) != PTP_RC_OK)
+    {
+        return ret;
+    }
+
+    *p_handles = handles.Handler;
+    *p_len = handles.n;
+
+    return PTP_RC_OK;
+}
+
+uint16_t VitaMTP_GetObject_Callback(vita_device_t *device, uint32_t handle, uint64_t *size, write_callback_t write_callback)
+{
+    PTPPropertyValue value;
+    uint16_t ret;
+
+    if ((ret = ptp_mtp_getobjectpropvalue(VitaMTP_Get_PTP_Params(device), handle, PTP_OPC_ObjectSize, &value,
+                                          PTP_DTC_UINT64)) != PTP_RC_OK)
+    {
+        return ret;
+    }
+
+    *size = value.u64;
+    unsigned char *dummy = NULL;
+    write_callback_func = write_callback;
+    ret = ptp_getobject(VitaMTP_Get_PTP_Params(device), handle, &dummy);
+    write_callback_func = NULL;
     return ret;
 }
 
