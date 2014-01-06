@@ -53,6 +53,7 @@
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
 #define SOCKET_WOULDBLOCK EWOULDBLOCK
+#define SOCKET int
 #else
 typedef int socklen_t;
 #define PF_LOCAL PF_INET
@@ -89,14 +90,14 @@ enum broadcast_command
 };
 
 extern int g_VitaMTP_logmask;
-static int g_broadcast_command_fds[] = {-1, -1};
+static SOCKET g_broadcast_command_fds[] = {INVALID_SOCKET, INVALID_SOCKET};
 
 extern volatile uint32_t g_register_cancel_id;
 extern volatile uint32_t g_canceltask_event_id;
 extern volatile int g_event_cancelled;
 extern volatile int g_canceltask_set;
 
-static int g_cancel_fds[2] = {-1, -1};
+static SOCKET g_cancel_fds[2] = {INVALID_SOCKET, INVALID_SOCKET};
 extern pthread_mutex_t g_event_mutex;
 extern read_callback_t read_callback_func;
 extern read_callback_t write_callback_func;
@@ -389,7 +390,7 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
 
         if(read_callback_func)
         {
-            ret = read_callback_func(&xdata[ptpip_data_payload+8], towrite, &xtowrite);
+            ret = read_callback_func(&xdata[ptpip_data_payload+8], towrite, (int64_t *)&xtowrite);
         }
         else
         {
@@ -503,7 +504,7 @@ ptp_ptpip_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
 
             if(write_callback_func)
             {
-                xret = write_callback_func(xdata+ptpip_data_payload, datalen, &written);
+                xret = write_callback_func(xdata+ptpip_data_payload, datalen, (int64_t *)&written);
             }
             else
             {
@@ -537,7 +538,7 @@ ptp_ptpip_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
 
             if(write_callback_func)
             {
-                xret = write_callback_func(xdata+ptpip_data_payload, datalen, &written);
+                xret = write_callback_func(xdata+ptpip_data_payload, datalen, (int64_t *)&written);
             }
             else
             {
@@ -1221,8 +1222,8 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
             close(sock);
             close(g_broadcast_command_fds[0]);
             close(g_broadcast_command_fds[1]);
-            g_broadcast_command_fds[0] = -1;
-            g_broadcast_command_fds[1] = -1;
+            g_broadcast_command_fds[0] = INVALID_SOCKET;
+            g_broadcast_command_fds[1] = INVALID_SOCKET;
             return -1;
         }
 
@@ -1249,8 +1250,8 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
             close(sock);
             close(g_broadcast_command_fds[0]);
             close(g_broadcast_command_fds[1]);
-            g_broadcast_command_fds[0] = -1;
-            g_broadcast_command_fds[1] = -1;
+            g_broadcast_command_fds[0] = INVALID_SOCKET;
+            g_broadcast_command_fds[1] = INVALID_SOCKET;
             return -1;
         }
     }
@@ -1258,7 +1259,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
     free(host_response);
     close(sock);
     close(g_broadcast_command_fds[0]);
-    g_broadcast_command_fds[0] = -1;
+    g_broadcast_command_fds[0] = INVALID_SOCKET;
     return 0;
 }
 
@@ -1335,7 +1336,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
                                        device_registered_callback_t is_registered, register_device_callback_t create_register_pin,
                                        device_reg_complete_callback_t reg_complete)
 {
-    int s_sock;
+    SOCKET s_sock;
     unsigned int slen;
     struct sockaddr_in si_host;
     struct sockaddr_in si_client;
@@ -1387,7 +1388,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
 
     fd_set fd;
     int ret;
-    int c_sock = INVALID_SOCKET;
+    SOCKET c_sock = INVALID_SOCKET;
     char *data = NULL;
     size_t len;
     char method[20];
@@ -1396,7 +1397,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
     int listen = 1;
     memset(device, 0, sizeof(vita_device_t));
     int max_fds = s_sock > g_cancel_fds[0] ? s_sock : g_cancel_fds[0];
-    VitaMTP_Log(VitaMTP_DEBUG, "waiting for connection\n");
+    VitaMTP_Log(VitaMTP_VERBOSE, "waiting for connection\n");
 
     while (listen)
     {
@@ -1584,8 +1585,8 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
 
     close(g_cancel_fds[0]);
     close(g_cancel_fds[1]);
-    g_cancel_fds[0] = -1;
-    g_cancel_fds[1] = -1;
+    g_cancel_fds[0] = INVALID_SOCKET;
+    g_cancel_fds[1] = INVALID_SOCKET;
 
     if (device->network_device.addr.sin_addr.s_addr > 0)
     {
@@ -1682,11 +1683,14 @@ void VitaMTP_Cancel_Get_Wireless_Vita(void)
     }
 
     int cancel_flag = 1;
+
+    VitaMTP_Log(VitaMTP_VERBOSE, "Sending cancel packet to wireless thread\n");
     if (send(g_cancel_fds[1], (char *)&cancel_flag, sizeof(cancel_flag), 0) < sizeof(cancel_flag))
     {
-        VitaMTP_Log(VitaMTP_ERROR, "failed to send command to stop wireless search");
+        VitaMTP_Log(VitaMTP_ERROR, "failed to send command to stop wireless search\n");
     }
 
+    VitaMTP_Log(VitaMTP_VERBOSE, "Wireless cancel packet sent\n");
     close(g_cancel_fds[1]);
     g_cancel_fds[1] = INVALID_SOCKET;
 

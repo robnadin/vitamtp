@@ -207,7 +207,7 @@ ptp_read_func(
 
         if(use_callback && write_callback_func)
         {
-            putfunc_ret = write_callback_func(bytes, xread, &written);
+            putfunc_ret = write_callback_func(bytes, xread, (int64_t *)&written);
         }
         else
         {
@@ -325,7 +325,7 @@ ptp_write_func(
 
         if(use_callback && read_callback_func)
         {
-            getfunc_ret = read_callback_func(bytes, towrite, &towrite);
+            getfunc_ret = read_callback_func(bytes, towrite, (int64_t *)&towrite);
         }
         else
         {
@@ -644,7 +644,7 @@ ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
 
         if(read_callback_func)
         {
-            ret = read_callback_func(usbdata.payload.data, datawlen, &gotlen);
+            ret = read_callback_func(usbdata.payload.data, datawlen, (int64_t *)&gotlen);
         }
         else
         {
@@ -784,7 +784,7 @@ ptp_usb_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
 
             if(write_callback_func)
             {
-                putfunc_ret = write_callback_func(usbdata.payload.data, rlen - PTP_USB_BULK_HDR_LEN, &written);
+                putfunc_ret = write_callback_func(usbdata.payload.data, rlen - PTP_USB_BULK_HDR_LEN, (int64_t *)&written);
             }
             else
             {
@@ -867,7 +867,7 @@ ptp_usb_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
 
         if(write_callback_func)
         {
-            putfunc_ret = write_callback_func(usbdata.payload.data, rlen - PTP_USB_BULK_HDR_LEN, &written);
+            putfunc_ret = write_callback_func(usbdata.payload.data, rlen - PTP_USB_BULK_HDR_LEN, (int64_t *)&written);
         }
         else
         {
