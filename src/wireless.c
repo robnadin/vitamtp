@@ -52,11 +52,13 @@
 #ifndef _WIN32
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
+#define SOCKET_WOULDBLOCK EWOULDBLOCK
 #else
 typedef int socklen_t;
 #define PF_LOCAL PF_INET
 #define MSG_DONTWAIT 0
 #define close(s) closesocket(s)
+#define SOCKET_WOULDBLOCK WSAEWOULDBLOCK
 #endif
 
 // compatible sleep function
@@ -1033,7 +1035,7 @@ static int VitaMTP_Sock_Read_All(int sockfd, unsigned char **p_data, size_t *p_l
 #else
             int err = errno;
 #endif
-            if (err == EWOULDBLOCK)
+            if (err == SOCKET_WOULDBLOCK)
             {
                 break;
             }
