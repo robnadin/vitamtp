@@ -30,6 +30,8 @@ extern volatile uint32_t g_register_cancel_id;
 extern pthread_mutex_t g_event_mutex;
 extern pthread_mutex_t g_cancel_mutex;
 
+extern read_callback_t read_callback_func;
+
 struct vita_device
 {
     PTPParams *params;
@@ -288,6 +290,29 @@ uint16_t VitaMTP_SendData(vita_device_t *device, uint32_t event_id, uint32_t cod
     g_register_cancel_id = event_id;
     pthread_mutex_lock(&g_cancel_mutex);
     uint16_t ret = ptp_transaction(params, &ptp, PTP_DP_SENDDATA, len, &data, 0);
+    pthread_mutex_unlock(&g_cancel_mutex);
+    return ret;
+}
+
+uint16_t VitaMTP_SendData_Callback(vita_device_t *device, uint32_t event_id, uint32_t code, unsigned int len,
+                                   read_callback_t read_callback)
+{
+    PTPParams *params = (PTPParams *)device->params;
+    PTPContainer ptp;
+
+    PTP_CNT_INIT(ptp);
+    ptp.Code = code;
+    ptp.Nparam = 1;
+    ptp.Param1 = event_id;
+
+    g_register_cancel_id = event_id;
+    pthread_mutex_lock(&g_cancel_mutex);
+
+    unsigned char *dummy = NULL;
+    read_callback_func = read_callback;
+    uint16_t ret = ptp_transaction(params, &ptp, PTP_DP_SENDDATA, len, &dummy, 0);
+    read_callback_func = NULL;
+
     pthread_mutex_unlock(&g_cancel_mutex);
     return ret;
 }
