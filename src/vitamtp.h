@@ -524,6 +524,15 @@ typedef int (* VitaMTP_progressfunc_t)(uint64_t const sent, uint64_t const total
 #ifndef PTP_RC_OK
 #define PTP_RC_OK 0x2001
 #endif
+
+#ifndef PTP_RC_GeneralError
+#define PTP_RC_GeneralError 0x2002
+#endif
+
+#ifndef PTP_ERROR_CANCEL
+#define PTP_ERROR_CANCEL 0x02FB
+#endif
+
 #define PTP_EC_VITA_RequestSendNumOfObject 0xC104
 #define PTP_EC_VITA_RequestSendObjectMetadata 0xC105
 #define PTP_EC_VITA_RequestSendObject 0xC107
