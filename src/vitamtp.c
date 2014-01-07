@@ -19,6 +19,7 @@
 
 #include <pthread.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "ptp.h"
 #include "vitamtp.h"
@@ -652,8 +653,18 @@ uint16_t VitaMTP_CancelTask(vita_device_t *device, uint32_t cancel_event_id)
         PTPContainer resp;
         PTPParams *params = VitaMTP_Get_PTP_Params(device);
         // PTP_RC_TransactionCanceled
-        ret = ptp_ptpip_getresp(params, &resp);
-    } else {
+
+        if(VitaMTP_Get_Device_Type(device) == VitaDeviceWireless)
+        {
+            ret = params->getresp_func(params, &resp);
+        }
+        else
+        {
+            VitaMTP_USB_Clear(device);
+        }
+    }
+    else
+    {
         ret = PTP_ERROR_CANCEL;
     }
     g_canceltask_set = 0;

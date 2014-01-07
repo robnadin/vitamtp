@@ -482,8 +482,8 @@ typedef struct wireless_vita_info wireless_vita_info_t;
 typedef int (*device_registered_callback_t)(const char *deviceid);
 typedef int (*register_device_callback_t)(wireless_vita_info_t *info, int *p_err);
 typedef void (*device_reg_complete_callback_t)(void);
-typedef int (*read_callback_t)(unsigned char *data, int64_t wantlen, int64_t *gotlen);
-typedef int (*write_callback_t)(const unsigned char *data, int64_t size, int64_t *written);
+typedef int (*read_callback_t)(unsigned char *data, unsigned long wantlen, unsigned long *gotlen);
+typedef int (*write_callback_t)(const unsigned char *data, unsigned long size, unsigned long *written);
 
 /**
  * The callback type definition. Notice that a progress percentage ratio
@@ -735,6 +735,7 @@ void VitaMTP_Release_USB_Device(vita_device_t *device);
 int VitaMTP_Get_USB_Vitas(vita_raw_device_t **p_raw_devices);
 void VitaMTP_Unget_USB_Vitas(vita_raw_device_t *raw_devices, int numdevs);
 vita_device_t *VitaMTP_Get_First_USB_Vita(void);
+void VitaMTP_USB_Clear(vita_device_t *vita_device);
 
 /**
  * Funcions for wireless devices

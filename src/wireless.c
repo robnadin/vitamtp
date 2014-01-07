@@ -390,7 +390,7 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
 
         if(read_callback_func)
         {
-            ret = read_callback_func(&xdata[ptpip_data_payload+8], towrite, (int64_t *)&xtowrite);
+            ret = read_callback_func(&xdata[ptpip_data_payload+8], towrite, &xtowrite);
         }
         else
         {
@@ -504,7 +504,7 @@ ptp_ptpip_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
 
             if(write_callback_func)
             {
-                xret = write_callback_func(xdata+ptpip_data_payload, datalen, (int64_t *)&written);
+                xret = write_callback_func(xdata+ptpip_data_payload, datalen, &written);
             }
             else
             {
@@ -538,7 +538,7 @@ ptp_ptpip_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
 
             if(write_callback_func)
             {
-                xret = write_callback_func(xdata+ptpip_data_payload, datalen, (int64_t *)&written);
+                xret = write_callback_func(xdata+ptpip_data_payload, datalen, &written);
             }
             else
             {

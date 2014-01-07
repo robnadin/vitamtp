@@ -207,7 +207,7 @@ ptp_read_func(
 
         if(use_callback && write_callback_func)
         {
-            putfunc_ret = write_callback_func(bytes, xread, (int64_t *)&written);
+            putfunc_ret = write_callback_func(bytes, xread, &written);
         }
         else
         {
@@ -291,8 +291,6 @@ ptp_write_func(
     unsigned long curwrite = 0;
     unsigned char *bytes;
 
-    g_event_cancelled = 0;
-
     // This is the largest block we'll need to read in.
     bytes = malloc(CONTEXT_BLOCK_SIZE);
 
@@ -325,7 +323,7 @@ ptp_write_func(
 
         if(use_callback && read_callback_func)
         {
-            getfunc_ret = read_callback_func(bytes, towrite, (int64_t *)&towrite);
+            getfunc_ret = read_callback_func(bytes, towrite, &towrite);
         }
         else
         {
@@ -383,19 +381,6 @@ ptp_write_func(
                 }
             }
         }
-
-        pthread_mutex_lock(&g_event_mutex);
-        if(g_canceltask_set)
-        {
-            if(g_canceltask_event_id == g_register_cancel_id)
-            {
-                g_event_cancelled = 1;
-                VitaMTP_Log(VitaMTP_VERBOSE, "Event with ID %d cancelled by device\n", g_register_cancel_id);
-                pthread_mutex_unlock(&g_event_mutex);
-                return PTP_ERROR_CANCEL;
-            }
-        }
-        pthread_mutex_unlock(&g_event_mutex);
 
         if (xwritten < towrite) /* short writes happen */
             break;
@@ -644,7 +629,7 @@ ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
 
         if(read_callback_func)
         {
-            ret = read_callback_func(usbdata.payload.data, datawlen, (int64_t *)&gotlen);
+            ret = read_callback_func(usbdata.payload.data, datawlen, &gotlen);
         }
         else
         {
@@ -674,6 +659,8 @@ ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
     bytes_left_to_transfer = (uint32_t)size-datawlen;
     ret = PTP_RC_OK;
 
+    g_event_cancelled = 0;
+
     while (bytes_left_to_transfer > 0)
     {
         ret = ptp_write_func(bytes_left_to_transfer, handler, params->data, &written, 1);
@@ -692,6 +679,19 @@ ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
 
     if (ret != PTP_RC_OK && ret != PTP_ERROR_CANCEL)
         ret = PTP_ERROR_IO;
+
+    pthread_mutex_lock(&g_event_mutex);
+    if(g_canceltask_set)
+    {
+        if(g_canceltask_event_id == g_register_cancel_id)
+        {
+            g_event_cancelled = 1;
+            VitaMTP_Log(VitaMTP_VERBOSE, "Event with ID %d cancelled by device (1)\n", g_register_cancel_id);
+            pthread_mutex_unlock(&g_event_mutex);
+            return PTP_ERROR_CANCEL;
+        }
+    }
+    pthread_mutex_unlock(&g_event_mutex);
 
     return ret;
 }
@@ -784,7 +784,7 @@ ptp_usb_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
 
             if(write_callback_func)
             {
-                putfunc_ret = write_callback_func(usbdata.payload.data, rlen - PTP_USB_BULK_HDR_LEN, (int64_t *)&written);
+                putfunc_ret = write_callback_func(usbdata.payload.data, rlen - PTP_USB_BULK_HDR_LEN, &written);
             }
             else
             {
@@ -867,7 +867,7 @@ ptp_usb_getdata(PTPParams *params, PTPContainer *ptp, PTPDataHandler *handler)
 
         if(write_callback_func)
         {
-            putfunc_ret = write_callback_func(usbdata.payload.data, rlen - PTP_USB_BULK_HDR_LEN, (int64_t *)&written);
+            putfunc_ret = write_callback_func(usbdata.payload.data, rlen - PTP_USB_BULK_HDR_LEN, &written);
         }
         else
         {
@@ -1494,6 +1494,14 @@ void VitaMTP_USB_Exit(void)
 #ifdef PTP_USB_SUPPORT
     libusb_exit(g_usb_context);
 #endif
+}
+
+/**
+ * Clear the halt condition on the endpoint. Should be called after a cancel event.
+ */
+void VitaMTP_USB_Clear(vita_device_t *vita_device)
+{
+    libusb_clear_halt(vita_device->usb_device.handle, vita_device->usb_device.outep);
 }
 
 
