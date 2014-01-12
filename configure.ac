@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.52])
-AC_INIT([vitamtp], [2.1.0], [support@yifanlu.com])
+AC_INIT([vitamtp], [2.5.0], [codestation@gmail.com])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([src/vitamtp.c])
@@ -43,21 +43,16 @@ else
 fi
 AM_CONDITIONAL(HAVE_DOXYGEN,$HAVE_DOXYGEN)
 
-# Allow user to disable building OpenCMA
-AC_ARG_ENABLE([opencma],
-    AS_HELP_STRING([--enable-opencma[=type]], [Build type OpenCMA program (no,dynamic,static) [default=no]]),
-    [ac_enable_opencma=$enableval], [ac_enable_opencma=no])
-AM_CONDITIONAL([BUILD_OPENCMA], [test "x$ac_enable_opencma" != "xno"])
-AM_CONDITIONAL([STATIC_OPENCMA], [test "x$ac_enable_opencma" != "xdynamic"])
-
 # Device support
 DEVICE_CFLAGS=
 AC_ARG_ENABLE([usb-support],
     AS_HELP_STRING([--disable-usb-support], [Disable VitaMTP USB device support [default=no]]),
     [ac_enable_usb=$enableval], [ac_enable_usb=yes])
+
 AC_ARG_ENABLE([wireless-support],
     AS_HELP_STRING([--disable-wireless-support], [Disable VitaMTP wireless device support [default=no]]),
     [ac_enable_wireless=$enableval], [ac_enable_wireless=yes])
+
 AM_CONDITIONAL([ENABLE_USB], [test x"$ac_enable_usb" = "xyes"])
 if test x"$ac_enable_usb" = "xyes" ; then
     PKG_CHECK_MODULES(LIBUSB, libusb-1.0)
@@ -65,6 +60,7 @@ if test x"$ac_enable_usb" = "xyes" ; then
     #AC_CHECK_LIB([usb-1.0], [libusb_init], [], [AC_MSG_ERROR([libusb-1.0 not found])])
     #AC_CHECK_HEADERS([libusb-1.0/libusb.h], [], [AC_MSG_ERROR([Cannot find libusb-1.0 header])])
 fi
+
 AM_CONDITIONAL([ENABLE_WIRELESS], [test x"$ac_enable_wireless" = "xyes"])
 if test x"$ac_enable_wireless" = "xyes" ; then
     # We use winsock2 with Windows
@@ -76,6 +72,7 @@ if test x"$ac_enable_wireless" = "xyes" ; then
     fi
     DEVICE_CFLAGS="$DEVICE_CFLAGS -DPTP_IP_SUPPORT"
 fi
+
 AC_SUBST(DEVICE_CFLAGS)
 AC_SUBST(OSFLAGS)
 

@@ -22,7 +22,7 @@ include_HEADERS=vitamtp.h
 #  increment AGE, Otherwise AGE is reset to 0. If CURRENT has changed,
 #  REVISION is set to 0, otherwise REVISION is incremented.
 # ---------------------------------------------------------------------------
-CURRENT=2
+CURRENT=3
 AGE=0
 REVISION=0
 SOVERSION=$(CURRENT):$(REVISION):$(AGE)
@@ -42,24 +42,6 @@ endif
 libvitamtp_la_CFLAGS=$(XML_CFLAGS) $(LIBUSB_CFLAGS) $(DEVICE_CFLAGS) $(PTHREAD_CFLAGS) -std=gnu99 -fgnu89-inline $(W32_CFLAGS)
 libvitamtp_la_LDFLAGS=$(XML_LIBS) $(LIBUSB_LIBS) $(PTHREAD_LIBS) -no-undefined -export-symbols-regex "VitaMTP_[0-9A-Za-z_]+" -version-info $(SOVERSION) $(W32_LDFLAGS)
 libvitamtp_la_LIBADD=$(LTLIBICONV)
-
-if BUILD_OPENCMA
-# static library for linking
-noinst_LIBRARIES=libvitamtp.a
-libvitamtp_a_SOURCES=$(libvitamtp_la_SOURCES)
-libvitamtp_a_CFLAGS=$(libvitamtp_la_CFLAGS)
-
-# opencma program
-bin_PROGRAMS=opencma
-opencma_SOURCES=opencma.h opencma.c database.c utilities.c
-opencma_CFLAGS=$(XML_CFLAGS) $(LIBUSB_CFLAGS) $(PTHREAD_CFLAGS) $(DEVICE_CFLAGS) -std=gnu99 -fgnu89-inline
-opencma_LDFLAGS=$(XML_LIBS) $(LIBUSB_LIBS) $(LIBICONV) $(PTHREAD_LIBS)
-if STATIC_OPENCMA
-opencma_LDADD=libvitamtp.a
-else
-opencma_LDADD=libvitamtp.la
-endif
-endif
 
 EXTRA_DIST=ptp-pack.c device-flags.h ptp.h
 DISTCLEANFILES=_stdint.h gphoto2-endian.h

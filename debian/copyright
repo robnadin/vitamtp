@@ -1,13 +1,15 @@
 Format: http://dep.debian.net/deps/dep5
 Upstream-Name: vitamtp
-Source: http://yifan.lu/p/vitamtp
+Source: http://github.com/codestation/VitaMTP
 
 Files: *
 Copyright: 2013 Yifan Lu <support@yifanlu.com>
+2013, 2014 codestation <codestation404@gmail.com>
 License: GPL-3.0+
 
 Files: debian/*
 Copyright: 2013 Yifan Lu <support@yifanlu.com>
+2013, 2014 codestation <codestation404@gmail.com>
 License: GPL-3.0+
 
 License: GPL-3.0+
