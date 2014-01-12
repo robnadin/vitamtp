@@ -1,10 +1,60 @@
-vitamtp (2.0.1) precise; urgency=low
+vitamtp (2.5.0) unstable; urgency=low
 
-  * Increase udev rule priority
+  * Bump soname version.
+  * Removed opencma.
 
- -- codestation <codestation404@gmail.com>  Fri, 4 Oct 2013 14:12:32 -0700
+ -- codestation <codestation404@gmail.com>  Sun, 12 Jan 2014 00:00:00 -0000
 
-vitamtp (2.0.0) precise; urgency=low
+vitamtp (2.4.0) unstable; urgency=low
+
+  * Expose some constants so the cancel event can be done by the app calling the library.
+  * Fix for cancelling usb transfers. Also make sure to crear the endpoint after receiving a cancel event.
+
+ -- codestation <codestation404@gmail.com>  Wed, 6 Jan 2014 00:00:00 -0000
+
+vitamtp (2.3.0) unstable; urgency=low
+
+  * Use SOCKET and INVALID_SOCKET on Windows.
+  * Restore the WSAEWOULDBLOCK checking on windows.
+  * Implement write callbacks to remove the big buffer requirement on the main app.
+  * Implement read callbacks to remove the mmap requirement on the main app.
+
+ -- codestation <codestation404@gmail.com>  Mon, 6 Jan 2014 00:00:00 -0000
+
+vitamtp (2.2.0) unstable; urgency=low
+
+  * Updated socketpair implementation for Windows.
+  * Implement VitaMTP_Cancel_Get_Wireless_Vita and remove disconnect callback.
+  * Do not call VitaMTP_USB functions if USE support is disabled.
+  * Return the online id and model name in the vita_info_t struct.
+  * Disable opencma command line app by default.
+
+ -- codestation <codestation404@gmail.com>  Fri, 3 Jan 2014 00:00:00 -0000
+
+vitamtp (2.1.0) unstable; urgency=low
+
+  * Bump CMA protocol version.
+  * Bump library version.
+
+ -- codestation <codestation404@gmail.com>  Mon, 4 Nov 2013 00:00:00 -0000
+
+vitamtp (2.0.2) unstable; urgency=low
+
+  * Disable nagle algorithm to improve performance and stability in wireless connections.
+  * Increased priority for udev rules.
+  * Set wireless device type to prevent a memory leak on disconnect.
+  * Avoid calling xmlCleanupParser multiple times.
+  * Experimental support for windows.
+  * Add callback for complete pin registration.
+  * Very basic support for event canceling.
+  * Make vitamtp.h C++ friendly.
+  * Bump cma protocol to 2.60.
+  * Fix crash when the current locale uses a comma as a decimal separator.
+  * Fix for largefile support
+
+ -- codestation <codestation404@gmail.com>  Sun, 6 Oct 2013 00:00:00 -0000
+
+vitamtp (2.0.0) unstable; urgency=low
 
   * Added wireless device support
   * Fixed video titles not showing
