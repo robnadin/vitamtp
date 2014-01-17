@@ -113,18 +113,13 @@ int VitaMTP_Data_Info_From_XML(vita_info_t *vita_info, const char *raw_data, con
         return 1;
     }
 
-    xmlChar *onlineId = xmlGetProp(node, BAD_CAST "onlineId");
-    vita_info->onlineId = onlineId ? strdup(onlineId) : NULL;
-
-    xmlChar *modelInfo = xmlGetProp(node, BAD_CAST "modelInfo");
-    vita_info->modelInfo = onlineId ? strdup(modelInfo) : NULL;
+    vita_info->onlineId = (char *)xmlGetProp(node, BAD_CAST "onlineId");
+    vita_info->modelInfo = (char *)xmlGetProp(node, BAD_CAST "modelInfo");
 
     strcpy(vita_info->responderVersion, (char *)responderVersion);
     vita_info->protocolVersion = atoi((char *)protocolVersion);
     xmlFree(responderVersion);
     xmlFree(protocolVersion);
-    xmlFree(onlineId);
-    xmlFree(modelInfo);
 
     // get thumb info
     if ((node = node->children) == NULL)
@@ -637,8 +632,8 @@ int VitaMTP_Data_Free_Capability(capability_info_t *info)
  */
 int VitaMTP_Data_Free_VitaInfo(vita_info_t *info)
 {
-    free(info->onlineId);
-    free(info->modelInfo);
+    xmlFree(info->onlineId);
+    xmlFree(info->modelInfo);
     return 0;
 }
 

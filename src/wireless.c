@@ -154,7 +154,7 @@ void VitaMTP_hex_dump(const unsigned char *data, unsigned int size, unsigned int
 #define ptpip_cmd_param4    30
 #define ptpip_cmd_param5    34
 
-static uint16_t ptp_ptpip_check_event(PTPParams *params);
+//static uint16_t ptp_ptpip_check_event(PTPParams *params);
 
 /* send / receive functions */
 uint16_t
@@ -328,10 +328,10 @@ ptp_ptpip_evt_read(PTPParams *params, PTPIPHeader *hdr, unsigned char **data)
 #define ptpip_data_transid      0
 #define ptpip_data_payload      4
 
-#define WRITE_BLOCKSIZE 32756
+#define WRITE_BLOCKSIZE 65536
 uint16_t
 ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
-                   unsigned long size, PTPDataHandler *handler
+                   uint64_t size, PTPDataHandler *handler
                   )
 {
     unsigned char   request[0x14];
@@ -342,7 +342,7 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
     htod32a(&request[ptpip_type],PTPIP_START_DATA_PACKET);
     htod32a(&request[ptpip_len],sizeof(request));
     htod32a(&request[ptpip_startdata_transid  + 8],ptp->Transaction_ID);
-    htod32a(&request[ptpip_startdata_totallen + 8],(uint32_t)size);
+    htod32a(&request[ptpip_startdata_totallen + 8],size);
     htod32a(&request[ptpip_startdata_unknown  + 8],0);
     VitaMTP_Log(VitaMTP_DEBUG, "ptpip/senddata\n");
 
@@ -363,11 +363,9 @@ ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
     }
 
     xdata = malloc(WRITE_BLOCKSIZE+8+4);
+    if (!xdata) return PTP_RC_GeneralError;    
 
     g_event_cancelled = 0;
-
-    if (!xdata) return PTP_RC_GeneralError;
-
     curwrite = 0;
 
     while (curwrite < size)
@@ -1516,7 +1514,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
             else if (strcmp(method, "REGISTER") == 0)
             {
                 wireless_vita_info_t info;
-                char *pin_try;
+                char *pin_try = NULL;
                 VitaMTP_Parse_Device_Headers(data+read, &info, NULL, &pin_try);
 
                 if (strcmp(device->guid, info.deviceid))

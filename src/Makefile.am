@@ -39,7 +39,7 @@ libvitamtp_la_SOURCES=vitamtp.h datautils.c device.c ptp.c usb.c vitamtp.c wirel
 if COMPILE_MINGW32
 libvitamtp_la_SOURCES += asprintf.c socketpair.c
 endif
-libvitamtp_la_CFLAGS=$(XML_CFLAGS) $(LIBUSB_CFLAGS) $(DEVICE_CFLAGS) $(PTHREAD_CFLAGS) -std=gnu99 -fgnu89-inline $(W32_CFLAGS)
+libvitamtp_la_CFLAGS=-std=gnu99 -fgnu89-inline -Wall $(XML_CFLAGS) $(LIBUSB_CFLAGS) $(DEVICE_CFLAGS) $(PTHREAD_CFLAGS) $(W32_CFLAGS)
 libvitamtp_la_LDFLAGS=$(XML_LIBS) $(LIBUSB_LIBS) $(PTHREAD_LIBS) -no-undefined -export-symbols-regex "VitaMTP_[0-9A-Za-z_]+" -version-info $(SOVERSION) $(W32_LDFLAGS)
 libvitamtp_la_LIBADD=$(LTLIBICONV)
 

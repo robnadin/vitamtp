@@ -3,7 +3,7 @@
  * Special device flags to deal with bugs in specific devices.
  *
  * Copyright (C) 2005-2007 Richard A. Low <richard@wentnet.com>
- * Copyright (C) 2005-2011 Linus Walleij <triad@df.lth.se>
+ * Copyright (C) 2005-2012 Linus Walleij <triad@df.lth.se>
  * Copyright (C) 2006-2007 Marcus Meissner
  * Copyright (C) 2007 Ted Bullock
  *
@@ -19,8 +19,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA  02110-1301  USA
  *
  * This file is supposed to be included by both libmtp and libgphoto2.
  */
@@ -129,7 +129,8 @@
  * on Windows anyway, probably because the Windows implementation
  * does not check that these bytes are valid. To interoperate
  * with devices like this, we need this flag to emulate the
- * Windows bug.
+ * Windows bug. Broken headers has also been found in the
+ * Aricent MTP stack.
  */
 #define DEVICE_FLAG_IGNORE_HEADER_ERRORS 0x00000080
 /**
@@ -240,7 +241,7 @@
  * Direct PTP match required.
  * (libgphoto2)
  */
-#define DEVICE_FLAG_MATCH_PTP_INTERFACE		0x00800000
+#define DEVICE_FLAG_OLYMPUS_XML_WRAPPED		0x00800000
 /**
  * This flag is like DEVICE_FLAG_OGG_IS_UNKNOWN but for FLAC
  * files instead. Using the unknown filetype for FLAC files.
@@ -274,10 +275,16 @@
  */
 #define DEVICE_FLAG_BROKEN_GET_OBJECT_PROPVAL	0x20000000
 /**
- * The PS Vita does not return object lists and will slow 
- * operations down when attempting to do so.
+ * It seems that some devices return an bad data when
+ * using the GetObjectInfo operation. So in these cases
+ * we prefer to override the PTP-compatible object infos
+ * with the MTP property list.
+ *
+ * For example Some Samsung Galaxy S devices contain an MTP
+ * stack that present the ObjectInfo in 64 bit instead of
+ * 32 bit.
  */
-#define DEVICE_FLAG_NO_OBJECT_LIST	0x40000000
+#define DEVICE_FLAG_PROPLIST_OVERRIDES_OI	0x40000000
 
 /**
  * All these bug flags need to be set on SONY NWZ Walkman
@@ -302,3 +309,21 @@
    DEVICE_FLAG_BROKEN_SEND_OBJECT_PROPLIST | \
    DEVICE_FLAG_UNLOAD_DRIVER | \
    DEVICE_FLAG_LONG_TIMEOUT )
+/**
+ * All these bug flags appear on a number of SonyEricsson
+ * devices including Android devices not using the stock
+ * Android 4.0+ (Ice Cream Sandwich) MTP stack. It is highly
+ * supected that these bugs comes from an MTP implementation
+ * from Aricent, so it is called the Aricent bug flags as a
+ * shorthand. Especially the header errors that need to be
+ * ignored is typical for this stack.
+ *
+ * After some guesswork we auto-assign these bug flags to
+ * devices that present the "microsoft.com/WPDNA", and
+ * "sonyericsson.com/SE" but NOT the "android.com"
+ * descriptor.
+ */
+#define DEVICE_FLAGS_ARICENT_BUGS \
+  (DEVICE_FLAG_IGNORE_HEADER_ERRORS | \
+   DEVICE_FLAG_BROKEN_SEND_OBJECT_PROPLIST | \
+   DEVICE_FLAG_BROKEN_MTPGETOBJPROPLIST )

@@ -1,13 +1,37 @@
+/* ptp-pack.c
+ *
+ * Copyright (C) 2001-2004 Mariusz Woloszyn <emsi@ipartners.pl>
+ * Copyright (C) 2003-2012 Marcus Meissner <marcus@jet.franken.de>
+ * Copyright (C) 2006-2008 Linus Walleij <triad@df.lth.se>
+ * Copyright (C) 2007 Tero Saarni <tero.saarni@gmail.com>
+ * Copyright (C) 2009 Axel Waggershauser <awagger@web.de>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA  02110-1301  USA
+ */
+
 /* currently this file is included into ptp.c */
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+#ifndef UINT_MAX
+# define UINT_MAX 0xFFFFFFFF
+#endif
 #ifdef HAVE_ICONV
 #include <iconv.h>
-#endif
-
-#ifndef _WIN32
-#include <arpa/inet.h>
-#else
-#include <winsock2.h>
 #endif
 
 static inline uint16_t
@@ -151,7 +175,7 @@ ptp_unpack_string(PTPParams *params, unsigned char* data, uint16_t offset, uint8
 static inline int
 ucs2strlen(uint16_t const * const unicstr)
 {
-	int length;
+	int length = 0;
 	
 	/* Unicode strings are terminated with 2 * 0x00 */
 	for(length = 0; unicstr[length] != 0x0000U; length ++);
@@ -162,14 +186,13 @@ ucs2strlen(uint16_t const * const unicstr)
 static inline void
 ptp_pack_string(PTPParams *params, char *string, unsigned char* data, uint16_t offset, uint8_t *len)
 {
-	int packedlen;
+	int packedlen = 0;
 	uint16_t ucs2str[PTP_MAXSTRLEN+1];
 	char *ucs2strp = (char *) ucs2str;
 	size_t convlen = strlen(string);
 
 	/* Cannot exceed 255 (PTP_MAXSTRLEN) since it is a single byte, duh ... */
 	memset(ucs2strp, 0, sizeof(ucs2str));  /* XXX: necessary? */
-	/*ptp_debug (params ,"pack_string of %s", string);*/
 #ifdef HAVE_ICONV
 	if (params->cd_locale_to_ucs2 != (iconv_t)-1) {
 		size_t nconv;
@@ -183,7 +206,8 @@ ptp_pack_string(PTPParams *params, char *string, unsigned char* data, uint16_t o
 	} else
 #endif
 	{
-		int i;
+		unsigned int i;
+
 		for (i=0;i<convlen;i++) {
 			ucs2str[i] = string[i];
 		}
@@ -238,12 +262,15 @@ ptp_unpack_uint32_t_array(PTPParams *params, unsigned char* data, uint16_t offse
 {
 	uint32_t n, i=0;
 
+	*array = NULL;
 	n=dtoh32a(&data[offset]);
+	if (n >= UINT_MAX/sizeof(uint32_t))
+		return 0;
+	if (!n)
+		return 0;
 	*array = malloc (n*sizeof(uint32_t));
-	while (n>i) {
+	for (i=0;i<n;i++)
 		(*array)[i]=dtoh32a(&data[offset+(sizeof(uint32_t)*(i+1))]);
-		i++;
-	}
 	return n;
 }
 
@@ -264,12 +291,15 @@ ptp_unpack_uint16_t_array(PTPParams *params, unsigned char* data, uint16_t offse
 {
 	uint32_t n, i=0;
 
+	*array = NULL;
 	n=dtoh32a(&data[offset]);
+	if (n >= UINT_MAX/sizeof(uint16_t))
+		return 0;
+	if (!n)
+		return 0;
 	*array = malloc (n*sizeof(uint16_t));
-	while (n>i) {
+	for (i=0;i<n;i++)
 		(*array)[i]=dtoh16a(&data[offset+(sizeof(uint16_t)*(i+2))]);
-		i++;
-	}
 	return n;
 }
 
@@ -339,7 +369,7 @@ ptp_unpack_DI (PTPParams *params, unsigned char* data, PTPDeviceInfo *di, unsign
 		&len);
 }
 
-static void inline
+inline static void
 ptp_free_DI (PTPDeviceInfo *di) {
 	if (di->SerialNumber) free (di->SerialNumber);
 	if (di->DeviceVersion) free (di->DeviceVersion);
@@ -357,7 +387,9 @@ ptp_free_DI (PTPDeviceInfo *di) {
 static inline void
 ptp_unpack_EOS_DI (PTPParams *params, unsigned char* data, PTPCanonEOSDeviceInfo *di, unsigned int datalen)
 {
-	int totallen = 4;
+	unsigned int totallen = 4;
+
+	memset (di,0, sizeof(*di));
 	if (datalen < 8) return;
 
 	/* uint32_t struct len - ignore */
@@ -410,6 +442,11 @@ ptp_unpack_OH (PTPParams *params, unsigned char* data, PTPObjectHandles *oh, uns
 static inline void
 ptp_unpack_SIDs (PTPParams *params, unsigned char* data, PTPStorageIDs *sids, unsigned int len)
 {
+	if (!data || !len) {
+		sids->n = 0;
+		sids->Storage = NULL;
+		return;
+        }
 	sids->n = ptp_unpack_uint32_t_array(params, data, PTP_sids,
 	&sids->Storage);
 }
@@ -473,16 +510,19 @@ ptp_pack_OI (PTPParams *params, PTPObjectInfo *oi, unsigned char** oidataptr)
 	uint8_t filenamelen;
 	uint8_t capturedatelen=0;
 	/* let's allocate some memory first; correct assuming zero length dates */
-	oidata=malloc(PTP_oi_MaxLen);
+	oidata=malloc(PTP_oi_MaxLen + params->ocs64*4);
+	*oidataptr=oidata;
 	/* the caller should free it after use! */
 #if 0
 	char *capture_date="20020101T010101"; /* XXX Fake date */
 #endif
-	memset (oidata, 0, PTP_oi_MaxLen);
+	memset (oidata, 0, PTP_oi_MaxLen + params->ocs64*4);
 	htod32a(&oidata[PTP_oi_StorageID],oi->StorageID);
 	htod16a(&oidata[PTP_oi_ObjectFormat],oi->ObjectFormat);
 	htod16a(&oidata[PTP_oi_ProtectionStatus],oi->ProtectionStatus);
 	htod32a(&oidata[PTP_oi_ObjectCompressedSize],oi->ObjectCompressedSize);
+	if (params->ocs64)
+		oidata += 4;
 	htod16a(&oidata[PTP_oi_ThumbFormat],oi->ThumbFormat);
 	htod32a(&oidata[PTP_oi_ThumbCompressedSize],oi->ThumbCompressedSize);
 	htod32a(&oidata[PTP_oi_ThumbPixWidth],oi->ThumbPixWidth);
@@ -523,16 +563,14 @@ ptp_pack_OI (PTPParams *params, PTPObjectInfo *oi, unsigned char** oidataptr)
 	}
 #endif
 	/* XXX this function should return dataset length */
-	
-	*oidataptr=oidata;
-	return (PTP_oi_Filename+filenamelen*2+(capturedatelen+1)*3);
+	return (PTP_oi_Filename+filenamelen*2+(capturedatelen+1)*3)+params->ocs64*4;
 }
 
 static time_t
 ptp_unpack_PTPTIME (const char *str) {
 	char ptpdate[40];
 	char tmp[5];
-	int  ptpdatelen;
+	size_t  ptpdatelen;
 	struct tm tm;
 
 	if (!str)
@@ -542,11 +580,12 @@ ptp_unpack_PTPTIME (const char *str) {
 		/*ptp_debug (params ,"datelen is larger then size of buffer", ptpdatelen, (int)sizeof(ptpdate));*/
 		return 0;
 	}
-	strcpy (ptpdate, str);
 	if (ptpdatelen<15) {
 		/*ptp_debug (params ,"datelen is less than 15 (%d)", ptpdatelen);*/
 		return 0;
 	}
+	strncpy (ptpdate, str, sizeof(ptpdate));
+	ptpdate[sizeof(ptpdate) - 1] = '\0';
 
 	memset(&tm,0,sizeof(tm));
 	strncpy (tmp, ptpdate, 4);
@@ -582,6 +621,12 @@ ptp_unpack_OI (PTPParams *params, unsigned char* data, PTPObjectInfo *oi, unsign
 	oi->ObjectFormat=dtoh16a(&data[PTP_oi_ObjectFormat]);
 	oi->ProtectionStatus=dtoh16a(&data[PTP_oi_ProtectionStatus]);
 	oi->ObjectCompressedSize=dtoh32a(&data[PTP_oi_ObjectCompressedSize]);
+
+	/* Stupid Samsung Galaxy developers emit a 64bit objectcompressedsize */
+	if ((data[PTP_oi_filenamelen] == 0) && (data[PTP_oi_filenamelen+4] != 0)) {
+		params->ocs64 = 1;
+		data += 4;
+	}
 	oi->ThumbFormat=dtoh16a(&data[PTP_oi_ThumbFormat]);
 	oi->ThumbCompressedSize=dtoh32a(&data[PTP_oi_ThumbCompressedSize]);
 	oi->ThumbPixWidth=dtoh32a(&data[PTP_oi_ThumbPixWidth]);
@@ -593,6 +638,7 @@ ptp_unpack_OI (PTPParams *params, unsigned char* data, PTPObjectInfo *oi, unsign
 	oi->AssociationType=dtoh16a(&data[PTP_oi_AssociationType]);
 	oi->AssociationDesc=dtoh32a(&data[PTP_oi_AssociationDesc]);
 	oi->SequenceNumber=dtoh32a(&data[PTP_oi_SequenceNumber]);
+
 	oi->Filename= ptp_unpack_string(params, data, PTP_oi_filenamelen, &filenamelen);
 
 	capture_date = ptp_unpack_string(params, data,
@@ -620,12 +666,14 @@ ptp_unpack_OI (PTPParams *params, unsigned char* data, PTPObjectInfo *oi, unsign
 }
 
 #define RARR(val,member,func)	{			\
-	int n,j;					\
+	unsigned int n,j;				\
 	if (total - *offset < sizeof(uint32_t))		\
 		return 0;				\
 	n = dtoh32a (&data[*offset]);			\
 	*offset += sizeof(uint32_t);			\
 							\
+	if (n >= UINT_MAX/sizeof(val->a.v[0]))		\
+		return 0;				\
 	val->a.count = n;				\
 	val->a.v = malloc(sizeof(val->a.v[0])*n);	\
 	if (!val->a.v) return 0;			\
@@ -633,9 +681,9 @@ ptp_unpack_OI (PTPParams *params, unsigned char* data, PTPObjectInfo *oi, unsign
 		CTVAL(val->a.v[j].member, func);	\
 }
 
-static inline int
+static inline unsigned int
 ptp_unpack_DPV (
-	PTPParams *params, unsigned char* data, int *offset, int total,
+	PTPParams *params, unsigned char* data, unsigned int *offset, int total,
 	PTPPropertyValue* value, uint16_t datatype
 ) {
 	switch (datatype) {
@@ -717,7 +765,6 @@ ptp_unpack_DPV (
 }
 
 /* Device Property pack/unpack */
-
 #define PTP_dpd_DevicePropertyCode	0
 #define PTP_dpd_DataType		2
 #define PTP_dpd_GetSet			4
@@ -726,7 +773,7 @@ ptp_unpack_DPV (
 static inline int
 ptp_unpack_DPD (PTPParams *params, unsigned char* data, PTPDevicePropDesc *dpd, unsigned int dpdlen)
 {
-	int offset=0, ret;
+	unsigned int offset=0, ret;
 
 	memset (dpd, 0, sizeof(*dpd));
 	dpd->DevicePropertyCode=dtoh16a(&data[PTP_dpd_DevicePropertyCode]);
@@ -796,7 +843,65 @@ outofmemory:
 	return 0;
 }
 
-/* (MTP) Object Property pack/unpack */
+static inline void
+duplicate_PropertyValue (const PTPPropertyValue *src, PTPPropertyValue *dst, uint16_t type) {
+	if (type & PTP_DTC_ARRAY_MASK) {
+		unsigned int i;
+
+		dst->a.count = src->a.count;
+		dst->a.v = malloc (sizeof(src->a.v)*src->a.count);
+		for (i=0;i<src->a.count;i++)
+			duplicate_PropertyValue (&src->a.v[i], &dst->a.v[i], type & ~PTP_DTC_ARRAY_MASK);
+		return;
+	}
+	switch (type & ~PTP_DTC_ARRAY_MASK) {
+	case PTP_DTC_INT8:	dst->i8 = src->i8; break;
+	case PTP_DTC_UINT8:	dst->u8 = src->u8; break;
+	case PTP_DTC_INT16:	dst->i16 = src->i16; break;
+	case PTP_DTC_UINT16:	dst->u16 = src->u16; break;
+	case PTP_DTC_INT32:	dst->i32 = src->i32; break;
+	case PTP_DTC_UINT32:	dst->u32 = src->u32; break;
+	case PTP_DTC_UINT64:	dst->u64 = src->u64; break;
+	case PTP_DTC_INT64:	dst->i64 = src->i64; break;
+#if 0
+	case PTP_DTC_INT128:	dst->i128 = src->i128; break;
+	case PTP_DTC_UINT128:	dst->u128 = src->u128; break;
+#endif
+	case PTP_DTC_STR: 	dst->str = strdup(src->str); break;
+	default:		break;
+	}
+	return;
+}
+
+static inline void
+duplicate_DevicePropDesc(const PTPDevicePropDesc *src, PTPDevicePropDesc *dst) {
+	int i;
+
+	dst->DevicePropertyCode	= src->DevicePropertyCode;
+	dst->DataType		= src->DataType;
+	dst->GetSet		= src->GetSet;
+	
+	duplicate_PropertyValue (&src->FactoryDefaultValue, &dst->FactoryDefaultValue, dst->DataType);
+	duplicate_PropertyValue (&src->CurrentValue, &dst->CurrentValue, dst->DataType);
+
+	dst->FormFlag		= src->FormFlag;
+	switch (src->FormFlag) {
+	case PTP_DPFF_Range:
+		duplicate_PropertyValue (&src->FORM.Range.MinimumValue, &dst->FORM.Range.MinimumValue, src->DataType);
+		duplicate_PropertyValue (&src->FORM.Range.MaximumValue, &dst->FORM.Range.MaximumValue, src->DataType);
+		duplicate_PropertyValue (&src->FORM.Range.StepSize,     &dst->FORM.Range.StepSize,     src->DataType);
+		break;
+	case PTP_DPFF_Enumeration:
+		dst->FORM.Enum.NumberOfValues = src->FORM.Enum.NumberOfValues;
+		dst->FORM.Enum.SupportedValue = malloc (sizeof(dst->FORM.Enum.SupportedValue[0])*src->FORM.Enum.NumberOfValues);
+		for (i = 0; i<src->FORM.Enum.NumberOfValues ; i++)
+			duplicate_PropertyValue (&src->FORM.Enum.SupportedValue[i], &dst->FORM.Enum.SupportedValue[i], src->DataType);
+		break;
+	case PTP_DPFF_None:
+		break;
+	}
+}
+
 #define PTP_opd_ObjectPropertyCode	0
 #define PTP_opd_DataType		2
 #define PTP_opd_GetSet			4
@@ -805,7 +910,7 @@ outofmemory:
 static inline int
 ptp_unpack_OPD (PTPParams *params, unsigned char* data, PTPObjectPropDesc *opd, unsigned int opdlen)
 {
-	int offset=0, ret;
+	unsigned int offset=0, ret;
 
 	memset (opd, 0, sizeof(*opd));
 	opd->ObjectPropertyCode=dtoh16a(&data[PTP_opd_ObjectPropertyCode]);
@@ -832,7 +937,7 @@ ptp_unpack_OPD (PTPParams *params, unsigned char* data, PTPObjectPropDesc *opd, 
 		if (!ret) goto outofmemory;
 		break;
 	case PTP_OPFF_Enumeration: {
-		int i;
+		unsigned int i;
 #define N	opd->FORM.Enum.NumberOfValues
 		N = dtoh16a(&data[offset]);
 		offset+=sizeof(uint16_t);
@@ -871,7 +976,7 @@ ptp_pack_DPV (PTPParams *params, PTPPropertyValue* value, unsigned char** dpvptr
 {
 	unsigned char* dpv=NULL;
 	uint32_t size=0;
-	int	i;
+	unsigned int i;
 
 	switch (datatype) {
 	case PTP_DTC_INT8:
@@ -1052,7 +1157,7 @@ ptp_unpack_OPL (PTPParams *params, unsigned char* data, MTPProperties **pprops, 
 { 
 	uint32_t prop_count = dtoh32a(data);
 	MTPProperties *props = NULL;
-	int offset = 0, i;
+	unsigned int offset = 0, i;
 
 	if (prop_count == 0) {
 		*pprops = NULL;
@@ -1110,13 +1215,18 @@ ptp_unpack_OPL (PTPParams *params, unsigned char* data, MTPProperties **pprops, 
 static inline void
 ptp_unpack_EC (PTPParams *params, unsigned char* data, PTPContainer *ec, unsigned int len)
 {
-	int	length;
+	unsigned int	length;
 	int	type;
 
 	if (data==NULL)
 		return;
 	memset(ec,0,sizeof(*ec));
+
 	length=dtoh32a(&data[PTP_ec_Length]);
+	if (length > len) {
+		ptp_debug (params, "length %d in container, but data only %d bytes?!", length, len);
+		return;
+	}
 	type = dtoh16a(&data[PTP_ec_Type]);
 
 	ec->Code=dtoh16a(&data[PTP_ec_Code]);
@@ -1166,17 +1276,91 @@ ptp_unpack_Canon_FE (PTPParams *params, unsigned char* data, PTPCANONFolderEntry
 		fe->Filename[i]=(char)dtoh8a(&data[PTP_cfe_Filename+i]);
 }
 
+/*
+    PTP Canon EOS Folder Entry unpack
+0: 00 00 08 a0     objectid
+4: 01 00 02 00     storageid
+8: 01 30 00 00     ofc
+12: 01 00
+14: 00 00
+16: 11 00 00 00
+20: 00 00 00 00
+24: 00 00 00 80
+28: 00 00 08 a0
+32: 4d 49 53 43-00 00 00 00 00 00 00 00     name
+00 00 00 00
+84 bc 74 46     objectime
+
+
+(normal PTP GetObjectInfo)
+ObjectInfo for 'IMG_0199.JPG':
+  Object ID: 0x92740c72
+  StorageID: 0x00020001
+  ObjectFormat: 0x3801
+  ProtectionStatus: 0x0000
+  ObjectCompressedSize: 2217241
+  ThumbFormat: 0x3808
+  ThumbCompressedSize: 5122
+  ThumbPixWidth: 160
+  ThumbPixHeight: 120
+  ImagePixWidth: 4000
+  ImagePixHeight: 3000
+  ImageBitDepth: 24
+  ParentObject: 0x92740000
+  AssociationType: 0x0000
+  AssociationDesc: 0x00000000
+  SequenceNumber: 0x00000000
+  ModificationDate: 0x4d985ff0
+  CaptureDate: 0x4d985ff0
+
+0010  38 00 00 00  Size of this entry
+0014  72 0c 74 92  OID
+0018  01 00 02 00  StorageID
+001c  01 38 00 00  OFC
+0020  00 00 00 00 00 00 00 00  ? 
+0028  19 d5 21 00  Size
+002c  00 00 74 92  ?
+0030  70 0c 74 92  OID
+0034  49 4d 47 5f-30 31 39 39 2e 4a 50 47  IMG_0199.JPG
+0040  00 00 00 00
+0044  10 7c 98 4d Time
+
+
+*/
+#define PTP_cefe_ObjectHandle		0
+#define PTP_cefe_StorageID		4
+#define PTP_cefe_ObjectFormatCode	8
+#define PTP_cefe_Flags			12
+#define PTP_cefe_ObjectSize		20
+#define PTP_cefe_Filename		32
+#define PTP_cefe_Time			48
+
+static inline void
+ptp_unpack_Canon_EOS_FE (PTPParams *params, unsigned char* data, PTPCANONFolderEntry *fe)
+{
+	int i;
+
+	fe->ObjectHandle=dtoh32a(&data[PTP_cefe_ObjectHandle]);
+	fe->ObjectFormatCode=dtoh16a(&data[PTP_cefe_ObjectFormatCode]);
+	fe->Flags=dtoh8a(&data[PTP_cefe_Flags]);
+	fe->ObjectSize=dtoh32a((unsigned char*)&data[PTP_cefe_ObjectSize]);
+	fe->Time=(time_t)dtoh32a(&data[PTP_cefe_Time]);
+	for (i=0; i<PTP_CANON_FilenameBufferLen; i++)
+		fe->Filename[i]=(char)data[PTP_cefe_Filename+i];
+}
+
+
 static inline uint16_t
 ptp_unpack_EOS_ImageFormat (PTPParams* params, unsigned char** data )
 {
 	/*
-	  EOS ImageFormat entries (of at least the 5DMII and the 400D ) look like this:
+	  EOS ImageFormat entries (of at least the 5DM2 and the 400D) look like this:
 		uint32: number of entries / generated files (1 or 2)
 		uint32: size of this entry in bytes (most likely allways 0x10)
 		uint32: image type (1 == JPG, 6 == RAW)
-		uint32: image size (0 == Large, 1 == Medium, 2 == Small)
+		uint32: image size (0 == Large, 1 == Medium, 2 == Small, 0xe == S1, 0xf == S2, 0x10 == S3)
 		uint32: image compression (2 == Standard/JPG, 3 == Fine/JPG, 4 == Lossles/RAW)
-	  If number of entries is 2 the last uint32 repeat.
+	  If the number of entries is 2 the last 4 uint32 repeat.
 
 	  example:
 		0: 0x       1
@@ -1185,11 +1369,14 @@ ptp_unpack_EOS_ImageFormat (PTPParams* params, unsigned char** data )
 		3: 0x       1
 		4: 0x       4
 
-	  The idea is to simply 'condense' these values to just one uint16 to be able to conveniontly
+	  The idea is to simply 'condense' these values to just one uint16 to be able to conveniently
 	  use the available enumeration facilities (look-up table). The image size and compression
 	  values fully describe the image format. Hence we generate a uint16 with the four nibles set
 	  as follows: entry 1 size | entry 1 compression | entry 2 size | entry 2 compression.
 	  The above example would result in the value 0x1400.
+
+	  The EOS 5D Mark III (and possibly other high-end EOS as well) added the extra fancy S1, S2
+	  and S3 JPEG options. S1 replaces the old Small. -1 the S1/S2/S3 to prevent the 0x10 overflow.
 	  */
 
 	const unsigned char* d = *data;
@@ -1224,6 +1411,12 @@ ptp_unpack_EOS_ImageFormat (PTPParams* params, unsigned char** data )
 
 	*data = (unsigned char*) d+4;
 
+	/* deal with S1/S2/S3 JPEG sizes, see above. */
+	if( s1 >= 0xe )
+		s1--;
+	if( s2 >= 0xe )
+		s2--;
+
 	return ((s1 & 0xF) << 12) | ((c1 & 0xF) << 8) | ((s2 & 0xF) << 4) | ((c2 & 0xF) << 0);
 }
 
@@ -1236,17 +1429,56 @@ ptp_pack_EOS_ImageFormat (PTPParams* params, unsigned char* data, uint16_t value
 	if( !data )
 		return s;
 
+#define PACK_5DM3_SMALL_JPEG_SIZE( X ) (X) >= 0xd ? (X)+1 : (X)
+
 	htod32a(data+=0, n);
 	htod32a(data+=4, 0x10);
 	htod32a(data+=4, ((value >> 8) & 0xF) == 4 ? 6 : 1);
-	htod32a(data+=4, (value >> 12) & 0xF);
+	htod32a(data+=4, PACK_5DM3_SMALL_JPEG_SIZE((value >> 12) & 0xF));
 	htod32a(data+=4, (value >> 8) & 0xF);
 
 	if (n==2) {
 		htod32a(data+=4, 0x10);
 		htod32a(data+=4, ((value >> 0) & 0xF) == 4 ? 6 : 1);
-		htod32a(data+=4, (value >> 4) & 0xF);
+		htod32a(data+=4, PACK_5DM3_SMALL_JPEG_SIZE((value >> 4) & 0xF));
 		htod32a(data+=4, (value >> 0) & 0xF);
+	}
+
+#undef PACK_5DM3_SMALL_JPEG_SIZE
+
+	return s;
+}
+
+static inline char*
+ptp_unpack_EOS_CustomFuncEx (PTPParams* params, unsigned char** data )
+{
+	uint32_t s = dtoh32a( *data );
+	uint32_t n = s/4, i;
+	char* str = (char*)malloc( s*2+s/4+1 ); /* n is size in uint32, maximum %x len is 8 chars and \0*/
+	if (!str)
+		return str;
+	char* p = str;
+
+	for (i=0; i < n; ++i)
+		p += sprintf(p, "%x,", dtoh32a( *data + 4*i ));
+
+	return str;
+}
+
+static inline uint32_t
+ptp_pack_EOS_CustomFuncEx (PTPParams* params, unsigned char* data, char* str)
+{
+	uint32_t s = strtoul(str, NULL, 16);
+	uint32_t n = s/4, i, v;
+
+	if (!data)
+		return s;
+
+	for (i=0; i<n; i++)
+	{
+		v = strtoul(str, &str, 16);
+		str++; /* skip the ',' delimiter */
+		htod32a(data + i*4, v);
 	}
 
 	return s;
@@ -1325,14 +1557,14 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 			(*ce)[i].u.object.oi.ObjectCompressedSize = dtoh32a(&curdata[PTP_ece_OI_Size]);
 			(*ce)[i].u.object.oi.Filename 		= strdup(((char*)&curdata[PTP_ece_OI_Name]));
 
-			ptp_debug (params, "event %d: request object transfer oid %08lx, ofc %04x, size %d, filename %s", i, (*ce)[i].u.object.oid, (*ce)[i].u.object.oi.ObjectFormat, (*ce)[i].u.object.oi.ObjectCompressedSize, (*ce)[i].u.object.oi.Filename);
+			ptp_debug (params, "event %d: request object transfer oid %08lx, ofc %04x, size %d, filename %p", i, (*ce)[i].u.object.oid, (*ce)[i].u.object.oi.ObjectFormat, (*ce)[i].u.object.oi.ObjectCompressedSize, (*ce)[i].u.object.oi.Filename);
 			break;
 		case  PTP_EC_CANON_EOS_AvailListChanged: {	/* property desc */
 			uint32_t	proptype = dtoh32a(&curdata[PTP_ece_Prop_Subtype]);
 			uint32_t	propxtype = dtoh32a(&curdata[PTP_ece_Prop_Desc_Type]);
 			uint32_t	propxcnt = dtoh32a(&curdata[PTP_ece_Prop_Desc_Count]);
 			unsigned char	*xdata = &curdata[PTP_ece_Prop_Desc_Data];
-			int		j;
+			unsigned int	j;
 			PTPDevicePropDesc	*dpd;
 
 			ptp_debug (params, "event %d: EOS prop %04x desc record, datasize %d, propxtype %d", i, proptype, size-PTP_ece_Prop_Desc_Data, propxtype);
@@ -1355,6 +1587,8 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 				break;
 			}
 			if (! propxcnt)
+				break;
+			if (propxcnt >= 2<<16) /* buggy or exploit */
 				break;
 
 			ptp_debug (params, "event %d: propxtype is %x, prop is 0x%04x, data type is 0x%04x, propxcnt is %d.",
@@ -1403,7 +1637,7 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 		}
 		case PTP_EC_CANON_EOS_PropValueChanged:
 			if (size >= 0xc) {	/* property info */
-				int j;
+				unsigned int j;
 				uint32_t	proptype = dtoh32a(&curdata[PTP_ece_Prop_Subtype]);
 				unsigned char	*xdata = &curdata[PTP_ece_Prop_Val_Data];
 				PTPDevicePropDesc	*dpd;
@@ -1509,6 +1743,7 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 				case PTP_DPC_CANON_EOS_QuickReviewTime:
 				case PTP_DPC_CANON_EOS_EVFMode:
 				case PTP_DPC_CANON_EOS_EVFOutputDevice:
+				case PTP_DPC_CANON_EOS_AutoPowerOff:
 					dpd->DataType = PTP_DTC_UINT16;
 					break;
 				case PTP_DPC_CANON_EOS_PictureStyle:
@@ -1529,7 +1764,6 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 					dpd->DataType = PTP_DTC_INT16;
 					break;
 				/* unknown props, listed from dump.... all 16 bit, but vals might be smaller */
-				case 0xd114:
 				case PTP_DPC_CANON_EOS_DPOFVersion:
 					dpd->DataType = PTP_DTC_UINT16;
 					ptp_debug (params, "event %d: Unknown EOS property %04x, datasize is %d, using uint16", i ,proptype, size-PTP_ece_Prop_Val_Data);
@@ -1572,7 +1806,7 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 				case PTP_DPC_CANON_EOS_MovSize:
 				case PTP_DPC_CANON_EOS_DepthOfField:
 				case PTP_DPC_CANON_EOS_LvViewTypeSelect:
-				case PTP_DPC_CANON_EOS_CustomFuncEx:
+				case PTP_DPC_CANON_EOS_AloMode:
 					dpd->DataType = PTP_DTC_UINT32;
 					ptp_debug (params, "event %d: Unknown EOS property %04x, datasize is %d, using uint32", i ,proptype, size-PTP_ece_Prop_Val_Data);
 					if ((size-PTP_ece_Prop_Val_Data) % sizeof(uint32_t) != 0)
@@ -1585,6 +1819,7 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 				case PTP_DPC_CANON_EOS_ImageFormatCF:
 				case PTP_DPC_CANON_EOS_ImageFormatSD:
 				case PTP_DPC_CANON_EOS_ImageFormatExtHD:
+				case PTP_DPC_CANON_EOS_CustomFuncEx:
 					break;
 				default:
 					ptp_debug (params, "event %d: Unknown EOS property %04x, datasize is %d", i ,proptype, size-PTP_ece_Prop_Val_Data);
@@ -1597,6 +1832,11 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 					dpd->FactoryDefaultValue.u32	= dtoh32a(xdata);
 					dpd->CurrentValue.u32		= dtoh32a(xdata);
 					ptp_debug (params ,"event %d: currentvalue of %x is %x", i, proptype, dpd->CurrentValue.u32);
+					break;
+				case PTP_DTC_INT16:
+					dpd->FactoryDefaultValue.i16	= dtoh16a(xdata);
+					dpd->CurrentValue.i16		= dtoh16a(xdata);
+					ptp_debug (params,"event %d: currentvalue of %x is %d", i, proptype, dpd->CurrentValue.i16);
 					break;
 				case PTP_DTC_UINT16:
 					dpd->FactoryDefaultValue.u16	= dtoh16a(xdata);
@@ -1628,7 +1868,7 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 					break;
 				}
 
-				/* ImageFormat special handling (WARNING: dont move this in front of the dpd->DataType switch!) */
+				/* ImageFormat and customFuncEx special handling (WARNING: dont move this in front of the dpd->DataType switch!) */
 				switch (proptype) {
 				case PTP_DPC_CANON_EOS_ImageFormat:
 				case PTP_DPC_CANON_EOS_ImageFormatCF:
@@ -1638,6 +1878,14 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 					dpd->FactoryDefaultValue.u16	= ptp_unpack_EOS_ImageFormat( params, &xdata );
 					dpd->CurrentValue.u16		= dpd->FactoryDefaultValue.u16;
 					ptp_debug (params,"event %d: decoded imageformat, currentvalue of %x is %x", i, proptype, dpd->CurrentValue.u16);
+					break;
+				case PTP_DPC_CANON_EOS_CustomFuncEx:
+					dpd->DataType = PTP_DTC_STR;
+					if (dpd->FactoryDefaultValue.str) free (dpd->FactoryDefaultValue.str);
+					if (dpd->CurrentValue.str)	  free (dpd->CurrentValue.str);
+					dpd->FactoryDefaultValue.str	= ptp_unpack_EOS_CustomFuncEx( params, &data );
+					dpd->CurrentValue.str		= strdup( (char*)dpd->FactoryDefaultValue.str );
+					ptp_debug (params,"event %d: decoded custom function, currentvalue of %x is %s", i, proptype, dpd->CurrentValue.str);
 					break;
 				}
 
@@ -1653,6 +1901,11 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 			if (size == 8) /* no output */
 				break;
 			ptp_debug (params, "event %d: EOS event 0, but size %d", i, size);
+			break;
+		case PTP_EC_CANON_EOS_BulbExposureTime:
+			(*ce)[i].type = PTP_CANON_EOS_CHANGES_TYPE_UNKNOWN;
+			(*ce)[i].u.info = malloc(strlen("BulbExposureTime 123456789"));
+			sprintf ((*ce)[i].u.info, "BulbExposureTime %d",  dtoh32a(curdata+8));
 			break;
 		default:
 			switch (type) {
@@ -1685,7 +1938,7 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 				break;
 			}
 			if (size >= 0x8) {	/* event info */
-				int j;
+				unsigned int j;
 				for (j=8;j<size;j++)
 					ptp_debug (params, "    %d: %02x", j, curdata[j]);
 			}
@@ -1712,9 +1965,9 @@ ptp_unpack_CANON_changes (PTPParams *params, unsigned char* data, int datasize, 
 #define PTP_nikon_ec_Param1		4
 #define PTP_nikon_ec_Size		6
 static inline void
-ptp_unpack_Nikon_EC (PTPParams *params, unsigned char* data, unsigned int len, PTPContainer **ec, int *cnt)
+ptp_unpack_Nikon_EC (PTPParams *params, unsigned char* data, unsigned int len, PTPContainer **ec, unsigned int *cnt)
 {
-	int i;
+	unsigned int i;
 
 	*ec = NULL;
 	if (data == NULL)
@@ -1863,7 +2116,7 @@ ptp_unpack_canon_directory (
 	}
 	/* Walk over all objects and distribute the storage ids */
 	while (1) {
-		int changed = 0;
+		unsigned int changed = 0;
 		for (i=0;i<cnt;i++) {
 			unsigned char	*cur = dir+i*0x4c;
 			uint32_t	oid = dtoh32a(cur + ptp_canon_dir_objectid);

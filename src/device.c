@@ -49,6 +49,13 @@ void ptp_nikon_getptpipguid(unsigned char *guid)
 }
 
 #ifndef PTP_USB_SUPPORT
+
+int VitaMTP_USB_Init(void)
+{
+    VitaMTP_Log(VitaMTP_ERROR, "USB is unsupported\n");
+    return -1;
+}
+
 vita_device_t *VitaMTP_Open_USB_Vita(vita_raw_device_t *raw_device)
 {
     VitaMTP_Log(VitaMTP_ERROR, "USB is unsupported\n");
@@ -76,6 +83,12 @@ vita_device_t *VitaMTP_Get_First_USB_Vita(void)
     VitaMTP_Log(VitaMTP_ERROR, "USB is unsupported\n");
     return NULL;
 }
+
+void VitaMTP_USB_Exit(void)
+{
+    VitaMTP_Log(VitaMTP_ERROR, "USB is unsupported\n");
+}
+
 #endif
 
 #ifndef PTP_IP_SUPPORT

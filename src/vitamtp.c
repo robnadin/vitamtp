@@ -640,7 +640,7 @@ uint16_t VitaMTP_SendObjectMetadataItems(vita_device_t *device, uint32_t event_i
  */
 uint16_t VitaMTP_CancelTask(vita_device_t *device, uint32_t cancel_event_id)
 {
-    uint16_t ret;
+    uint16_t ret = PTP_RC_OK;
 
     pthread_mutex_lock(&g_event_mutex);
     g_canceltask_event_id = cancel_event_id;
@@ -1051,13 +1051,10 @@ void VitaMTP_RegisterCancelEventId(uint32_t event_id)
  */
 int VitaMTP_Init(void)
 {
-
-#ifdef PTP_USB_SUPPORT
     if(VitaMTP_USB_Init() < 0)
     {
         return -1;
     }
-#endif
 
     VitaMTP_Data_Init();
     pthread_mutex_init(&g_event_mutex, NULL);

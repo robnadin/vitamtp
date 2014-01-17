@@ -593,21 +593,20 @@ ptp_usb_sendreq(PTPParams *params, PTPContainer *req)
 
 uint16_t
 ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
-                 unsigned long size, PTPDataHandler *handler
+                 uint64_t size, PTPDataHandler *handler
                 )
 {
-    uint16_t ret;
+    uint16_t ret = PTP_RC_OK;
     int wlen, datawlen;
-    unsigned long written;
     PTPUSBBulkContainer usbdata;
-    uint32_t bytes_left_to_transfer;
+    unsigned long bytes_left_to_transfer, written;
     PTPDataHandler memhandler;
 
 
     VitaMTP_Log(VitaMTP_DEBUG, "SEND DATA PHASE\n");
 
     /* build appropriate USB container */
-    usbdata.length  = htod32((uint32_t)(PTP_USB_BULK_HDR_LEN+size));
+    usbdata.length  = htod32(PTP_USB_BULK_HDR_LEN+size);
     usbdata.type    = htod16(PTP_USB_CONTAINER_DATA);
     usbdata.code    = htod16(ptp->Code);
     usbdata.trans_id= htod32(ptp->Transaction_ID);
@@ -656,8 +655,9 @@ ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
     if (size <= datawlen) return ret;
 
     /* if everything OK send the rest */
-    bytes_left_to_transfer = (uint32_t)size-datawlen;
+    bytes_left_to_transfer = size-datawlen;
     ret = PTP_RC_OK;
+    written = 0;
 
     g_event_cancelled = 0;
 
@@ -1479,21 +1479,17 @@ vita_device_t *VitaMTP_Get_First_USB_Vita(void)
  */
 int VitaMTP_USB_Init(void)
 {
-#ifdef PTP_USB_SUPPORT
     if (libusb_init(&g_usb_context) < 0)
     {
         VitaMTP_Log(VitaMTP_ERROR, "libusb init failed.\n");
         return -1;
     }
-#endif
     return 0;
 }
 
 void VitaMTP_USB_Exit(void)
 {
-#ifdef PTP_USB_SUPPORT
     libusb_exit(g_usb_context);
-#endif
 }
 
 /**
