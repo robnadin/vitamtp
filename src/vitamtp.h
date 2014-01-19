@@ -166,7 +166,8 @@ enum DataType
     Music = (1 << 5),
     Photo = (1 << 6),
     Video = (1 << 7),
-    Special = (1 << 8)
+    Special = (1 << 8),
+    Package = (1 << 9)
 };
 
 /**
@@ -666,6 +667,7 @@ typedef int (* VitaMTP_progressfunc_t)(uint64_t const sent, uint64_t const total
 #define VITA_OHFI_MUSIC 0x01
 #define VITA_OHFI_PHOTO 0x02
 #define VITA_OHFI_VIDEO 0x03
+#define VITA_OHFI_PACKAGE 0x05
 #define VITA_OHFI_BACKUP 0x06
 #define VITA_OHFI_VITAAPP 0x0A
 #define VITA_OHFI_PSPAPP 0x0D

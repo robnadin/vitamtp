@@ -488,6 +488,11 @@ int VitaMTP_Data_Metadata_To_XML(const metadata_t *p_metadata, char **data, int 
             free(aspectRatio);
             xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "fromType", "%d", current->data.thumbnail.fromType);
         }
+        else if (MASK_SET(current->dataType, Package))
+        {
+            xmlTextWriterStartElement(writer, BAD_CAST "game");
+            xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "title", "%s", current->name);
+        }
         else if (current->dataType & Folder)
         {
             xmlTextWriterStartElement(writer, BAD_CAST "folder");
