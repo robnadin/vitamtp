@@ -328,7 +328,7 @@ ptp_ptpip_evt_read(PTPParams *params, PTPIPHeader *hdr, unsigned char **data)
 #define ptpip_data_transid      0
 #define ptpip_data_payload      4
 
-#define WRITE_BLOCKSIZE 65536
+#define WRITE_BLOCKSIZE 32756
 uint16_t
 ptp_ptpip_senddata(PTPParams *params, PTPContainer *ptp,
                    uint64_t size, PTPDataHandler *handler
