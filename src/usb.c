@@ -55,7 +55,7 @@ struct vita_device
     } usb_device;
 };
 
-static libusb_context *g_usb_context;
+static libusb_context *g_usb_context = NULL;
 
 extern int g_VitaMTP_logmask;
 
@@ -1489,7 +1489,10 @@ int VitaMTP_USB_Init(void)
 
 void VitaMTP_USB_Exit(void)
 {
-    libusb_exit(g_usb_context);
+    if(g_usb_context)
+    {
+        libusb_exit(g_usb_context);
+    }
 }
 
 /**
