@@ -66,10 +66,10 @@ char *VitaMTP_Data_Make_Timestamp(long time)
     time_t tm1 = mktime(t1); // get GMT in time_t
     int diff = (int)(time - tm1); // make diff
     int h = abs(diff / 3600);
-    int m = abs(diff % 60);
+    int m = abs((diff / 3600 * 3600 - diff) / 60);
     struct tm *tmlocal = localtime(&tlocal); // get local time
     char *str = (char *)malloc(sizeof("0000-00-00T00:00:00+00:00")+1);
-    sprintf(str, "%04d-%02d-%02dT%02d:%02d:%02d%s%02d:%02d", tmlocal->tm_year+1900, tmlocal->tm_mon, tmlocal->tm_mday,
+    sprintf(str, "%04d-%02d-%02dT%02d:%02d:%02d%s%02d:%02d", tmlocal->tm_year+1900, tmlocal->tm_mon+1, tmlocal->tm_mday,
             tmlocal->tm_hour, tmlocal->tm_min, tmlocal->tm_sec, diff<0?"-":"+", h, m);
     return str;
 }
@@ -464,7 +464,7 @@ int VitaMTP_Data_Metadata_To_XML(const metadata_t *p_metadata, char **data, int 
             xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "parentalLevel", "%d", current->data.video.parentalLevel);
             xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "statusType", "%d", current->data.video.statusType);
             xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "explanation", "%s", current->data.video.explanation);
-            timestamp = VitaMTP_Data_Make_Timestamp(current->data.saveData.dateTimeUpdated);
+            timestamp = VitaMTP_Data_Make_Timestamp(current->data.video.dateTimeUpdated);
             xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "dateTimeUpdated", "%s", timestamp);
             free(timestamp);
             xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "copyright", "%s", current->data.video.copyright);
