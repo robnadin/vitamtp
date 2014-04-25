@@ -1322,6 +1322,38 @@ vita_device_t *VitaMTP_Open_USB_Vita(vita_raw_device_t *raw_device)
     dev->params = current_params;
     memcpy(dev->serial, raw_device->serial, sizeof(raw_device->serial));
     dev->device_type = VitaDeviceUSB;
+
+    if(ptp_getdeviceinfo(current_params, &current_params->deviceinfo) != PTP_RC_OK) {
+        VitaMTP_Log(VitaMTP_ERROR, "Unable to read device information on device.\n");
+        free(current_params);
+        free(dev);
+        return NULL;
+    }
+
+    if(current_params->deviceinfo.VendorExtensionID != 0x00000006)
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "No MTP vendor extension on device, trying to continue\n");
+    }
+
+    PTPDevicePropDesc dpd;
+    memset(&dpd,0,sizeof(dpd));
+
+    if(ptp_getdevicepropdesc(current_params, PTP_DPC_MTP_DeviceFriendlyName, &dpd) != PTP_RC_OK)
+    {
+        VitaMTP_Log(VitaMTP_ERROR, "Cannot read device name, tying to continue\n");
+    }
+    else
+    {
+        if(dpd.DataType == PTP_DTC_STR)
+        {
+            VitaMTP_Log(VitaMTP_INFO, "Detected device name: %s\n", dpd.CurrentValue.str);
+        }
+        else
+        {
+            VitaMTP_Log(VitaMTP_ERROR, "Wrong DataType for friendly name: %i\n", dpd.DataType);
+        }
+    }
+
     return dev;
 }
 
@@ -1498,11 +1530,18 @@ void VitaMTP_USB_Exit(void)
 /**
  * Clear the halt condition on the endpoint. Should be called after a cancel event.
  */
-void VitaMTP_USB_Clear(vita_device_t *vita_device)
+int VitaMTP_USB_Clear(vita_device_t *vita_device)
 {
-    libusb_clear_halt(vita_device->usb_device.handle, vita_device->usb_device.outep);
+    return libusb_clear_halt(vita_device->usb_device.handle, vita_device->usb_device.outep);
 }
 
+/**
+ * Reinitialize the device, call it something wrong happens with the endpoint
+ */
+int VitaMTP_USB_Reset(vita_device_t *vita_device)
+{
+    return libusb_reset_device(vita_device->usb_device.handle);
+}
 
 // end of functions taken from libmtp
 #endif // ifdef PTP_USB_SUPPORT
