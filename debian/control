@@ -1,7 +1,16 @@
 Source: vitamtp
 Priority: extra
 Maintainer: codestation <codestation404@gmail.com>
-Build-Depends: debhelper (>= 8.0.0), autotools-dev
+Build-Depends:
+ debhelper (>= 8.0.0),
+ autotools-dev,
+ automake,
+ libtool,
+ pkg-config,
+ libusb-1.0-0-dev,
+ libxml2-dev,
+ gettext
+
 Standards-Version: 3.9.2
 Section: libs
 Homepage: https://github.com/codestation/VitaMTP
