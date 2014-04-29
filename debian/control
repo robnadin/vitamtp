@@ -1,6 +1,11 @@
 Source: vitamtp
 Priority: extra
 Maintainer: codestation <codestation404@gmail.com>
+Standards-Version: 3.9.2
+Section: libs
+Homepage: https://github.com/codestation/VitaMTP
+Vcs-Git: git://github.com/codestation/VitaMTP.git
+Vcs-Browser: https://github.com/codestation/VitaMTP
 Build-Depends:
  debhelper (>= 8.0.0),
  autotools-dev,
@@ -10,12 +15,6 @@ Build-Depends:
  libusb-1.0-0-dev,
  libxml2-dev,
  gettext
-
-Standards-Version: 3.9.2
-Section: libs
-Homepage: https://github.com/codestation/VitaMTP
-Vcs-Git: git://github.com/codestation/VitaMTP.git
-Vcs-Browser: https://github.com/codestation/VitaMTP
 
 Package: vitamtp-dev
 Section: libdevel
