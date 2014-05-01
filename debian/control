@@ -8,6 +8,7 @@ Vcs-Git: git://github.com/codestation/VitaMTP.git
 Vcs-Browser: https://github.com/codestation/VitaMTP
 Build-Depends:
  debhelper (>= 8.0.0),
+ dh-autoreconf,
  autotools-dev,
  automake,
  libtool,
@@ -18,8 +19,9 @@ Build-Depends:
 
 Package: vitamtp-dev
 Section: libdevel
+Priority: optional
 Architecture: any
-Depends: vitamtp3 (= ${binary:Version})
+Depends: vitamtp3 (= ${binary:Version}), ${misc:Depends}
 Description: Library to interact with Vita's USB MTP protocol
 
 Package: vitamtp3

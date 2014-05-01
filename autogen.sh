@@ -21,6 +21,7 @@ libtoolize --copy --force || fail
 # Refresh GNU autotools toolchain: aclocal autoheader
 echo "Removing aclocal cruft"
 rm -f aclocal.m4
+touch config.rpath
 echo "Running aclocal $ACLOCAL_FLAGS"
 aclocal $ACLOCAL_FLAGS || fail
 echo "Removing autoheader cruft"
@@ -33,7 +34,6 @@ echo "Removing automake cruft"
 rm -f depcomp install-sh missing mkinstalldirs
 rm -f stamp-h*
 echo "Running automake"
-touch config.rpath
 automake --add-missing --gnu || fail
 
 # Refresh GNU autotools toolchain: autoconf
