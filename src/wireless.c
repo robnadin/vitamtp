@@ -1514,6 +1514,8 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
             else if (strcmp(method, "REGISTER") == 0)
             {
                 wireless_vita_info_t info;
+                memset(&info, 0, sizeof(info));
+
                 char *pin_try = NULL;
                 VitaMTP_Parse_Device_Headers(data+read, &info, NULL, &pin_try);
 

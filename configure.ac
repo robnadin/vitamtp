@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.52])
-AC_INIT([vitamtp], [2.5.2], [codestation@gmail.com])
+AC_INIT([vitamtp], [2.5.3], [codestation@gmail.com])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([src/vitamtp.c])
@@ -89,9 +89,7 @@ AC_SUBST(PTHREAD_LIBS)
 
 # Checks for additional headers
 AC_CHECK_HEADERS([errno.h fcntl.h iconv.h limits.h memory.h signal.h stdarg.h stddef.h stdlib.h string.h time.h unistd.h], [], [AC_MSG_ERROR([Cannot find required header.])])
-if test x"$mingw_compiler" != "xyes" ; then
-    AC_CHECK_HEADERS([dirent.h ftw.h sys/stat.h sys/statvfs.h], [], [AC_MSG_ERROR([Cannot find required header.])])
-else
+if test x"$mingw_compiler" == "xyes" ; then
     AC_CHECK_HEADERS([windows.h], [], [AC_MSG_ERROR([Cannot find required header.])])
 fi
 

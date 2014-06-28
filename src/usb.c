@@ -196,7 +196,7 @@ ptp_read_func(
             VitaMTP_hex_dump(bytes, xread, 16);
 
         // want to discard extra byte
-        if (expect_terminator_byte && xread == toread)
+        if (expect_terminator_byte && xread == (int)toread)
         {
             VitaMTP_Log(VitaMTP_DEBUG, "<==USB IN\nDiscarding extra byte\n");
 
@@ -244,7 +244,7 @@ ptp_read_func(
             }
         }
 
-        if (xread < toread) /* short reads are common */
+        if (xread < (int)toread) /* short reads are common */
             break;
     }
 
@@ -313,7 +313,7 @@ ptp_write_func(
         else
         {
             // This magic makes packets the same size that WMP send them.
-            if (towrite > ptp_usb->outep_maxpacket && towrite % ptp_usb->outep_maxpacket != 0)
+            if ((int)towrite > ptp_usb->outep_maxpacket && towrite % ptp_usb->outep_maxpacket != 0)
             {
                 towrite -= towrite % ptp_usb->outep_maxpacket;
             }
@@ -382,7 +382,7 @@ ptp_write_func(
             }
         }
 
-        if (xwritten < towrite) /* short writes happen */
+        if (xwritten < (int)towrite) /* short writes happen */
             break;
     }
 
@@ -597,7 +597,8 @@ ptp_usb_senddata(PTPParams *params, PTPContainer *ptp,
                 )
 {
     uint16_t ret = PTP_RC_OK;
-    int wlen, datawlen;
+    int wlen;
+    unsigned long datawlen;
     PTPUSBBulkContainer usbdata;
     unsigned long bytes_left_to_transfer, written;
     PTPDataHandler memhandler;
@@ -1095,7 +1096,7 @@ ptp_usb_control_cancel_request(PTPParams *params, uint32_t transactionid)
                                   sizeof(buffer),
                                   ptp_usb->timeout);
 
-    if (ret < sizeof(buffer))
+    if (ret < (int)sizeof(buffer))
         return PTP_ERROR_IO;
 
     return PTP_RC_OK;

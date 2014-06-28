@@ -58,7 +58,7 @@ char *VitaMTP_Data_Add_Size_Header(const char *orig, uint32_t len)
  *
  * @param time a Unix timestamp
  */
-char *VitaMTP_Data_Make_Timestamp(long time)
+char *VitaMTP_Data_Make_Timestamp(time_t time)
 {
     //  YYYY-MM-DDThh:mm:ss+hh:mm
     time_t tlocal = time; // save local time because gmtime modifies it

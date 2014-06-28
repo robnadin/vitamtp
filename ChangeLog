@@ -1,3 +1,9 @@
+vitamtp (2.5.3) unstable; urgency=low
+
+  * Fixed wrong size in metadata under windows platforms.
+
+ -- codestation <codestation404@gmail.com>  Sun, 29 Jun 2014 00:00:00 -0000
+
 vitamtp (2.5.2) unstable; urgency=low
 
   * Added pkg support

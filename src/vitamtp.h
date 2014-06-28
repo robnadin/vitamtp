@@ -25,6 +25,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <time.h>
 
 /**
  * Unopened Vita USB device
@@ -224,8 +225,8 @@ struct metadata
     char *name;
     char *path;
     int type;
-    unsigned long dateTimeCreated; // unix timestamp
-    unsigned long size;
+    time_t dateTimeCreated; // unix timestamp
+    uint64_t size;
     enum DataType dataType;
 
     union
@@ -816,7 +817,7 @@ void VitaMTP_RegisterCancelEventId(uint32_t event_id);
  * Functions to parse data
  */
 char *VitaMTP_Data_Add_Size_Header(const char *orig, uint32_t len);
-char *VitaMTP_Data_Make_Timestamp(long time);
+char *VitaMTP_Data_Make_Timestamp(time_t time);
 int VitaMTP_Data_Info_From_XML(vita_info_t *vita_info, const char *raw_data, const int len);
 int VitaMTP_Data_Initiator_To_XML(const initiator_info_t *p_initiator_info, char **data, int *len);
 const initiator_info_t *VitaMTP_Data_Initiator_New(const char *host_name, int protocol_version);
