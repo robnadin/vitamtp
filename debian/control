@@ -21,10 +21,10 @@ Package: vitamtp-dev
 Section: libdevel
 Priority: optional
 Architecture: any
-Depends: vitamtp3 (= ${binary:Version}), ${misc:Depends}
+Depends: vitamtp4 (= ${binary:Version}), ${misc:Depends}, libusb-1.0-0-dev, libxml2-dev
 Description: Library to interact with Vita's USB MTP protocol
 
-Package: vitamtp3
+Package: vitamtp4
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
