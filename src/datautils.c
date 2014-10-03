@@ -243,7 +243,7 @@ const initiator_info_t *VitaMTP_Data_Initiator_New(const char *host_name, int pr
     init_info->version = version_str;
     init_info->protocolVersion = protocol_version;
     init_info->name = host_name == NULL ? strdup("VitaMTP Library") : strdup(host_name);
-    init_info->applicationType = 5;
+    init_info->applicationType = 4;
     return init_info;
 }
 

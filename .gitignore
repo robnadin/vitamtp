@@ -12,8 +12,11 @@ m4
 aclocal.m4
 autom4te.cache
 config.guess
+config.h
 config.h.in
+config.log
 config.sub
+config.status
 depcomp
 configure
 compile
@@ -32,3 +35,4 @@ VitaMTP.xcodeproj/xcuserdata
 .deps
 .libs
 opencma
+Makefile.am.user

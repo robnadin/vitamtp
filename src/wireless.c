@@ -1068,7 +1068,7 @@ static int VitaMTP_Sock_Read_All(int sockfd, unsigned char **p_data, size_t *p_l
     return 0;
 }
 
-static int VitaMTP_Sock_Write_All(int sockfd, const unsigned char *data, size_t len, const struct sockaddr *dest_addr,
+static int VitaMTP_Sock_Write_All(int sockfd, const unsigned char *data, ssize_t len, const struct sockaddr *dest_addr,
                                   socklen_t addrlen)
 {
     while (1)
@@ -1191,7 +1191,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
 
         if (FD_ISSET(g_broadcast_command_fds[0], &fd))
         {
-            if (recv(g_broadcast_command_fds[0], (char *)&cmd, sizeof(enum broadcast_command), 0) < sizeof(enum broadcast_command))
+            if (recv(g_broadcast_command_fds[0], (char *)&cmd, sizeof(enum broadcast_command), 0) < (ssize_t)sizeof(enum broadcast_command))
             {
                 VitaMTP_Log(VitaMTP_ERROR, "Error recieving broadcast command. Stopping broadcast.\n");
                 cmd = BroadcastStop;
@@ -1278,7 +1278,7 @@ void VitaMTP_Stop_Broadcast(void)
         return;
     }
 
-    if (send(g_broadcast_command_fds[1], (char *)&cmd, sizeof(cmd), 0) < sizeof(cmd))
+    if (send(g_broadcast_command_fds[1], (char *)&cmd, sizeof(cmd), 0) < (ssize_t)sizeof(cmd))
     {
         VitaMTP_Log(VitaMTP_ERROR, "failed to send command to broadcast\n");
     }
@@ -1414,7 +1414,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
         if (FD_ISSET(g_cancel_fds[0], &fd))
         {
             int cancel_flag = 0;
-            if (recv(g_cancel_fds[0], (char *)&cancel_flag, sizeof(cancel_flag), 0) < sizeof(cancel_flag))
+            if (recv(g_cancel_fds[0], (char *)&cancel_flag, sizeof(cancel_flag), 0) < (ssize_t)sizeof(cancel_flag))
             {
                 VitaMTP_Log(VitaMTP_ERROR, "Error recieving cancel flag. Stopping connection.\n");
                 cancel_flag = 1;
@@ -1685,7 +1685,7 @@ void VitaMTP_Cancel_Get_Wireless_Vita(void)
     int cancel_flag = 1;
 
     VitaMTP_Log(VitaMTP_VERBOSE, "Sending cancel packet to wireless thread\n");
-    if (send(g_cancel_fds[1], (char *)&cancel_flag, sizeof(cancel_flag), 0) < sizeof(cancel_flag))
+    if (send(g_cancel_fds[1], (char *)&cancel_flag, sizeof(cancel_flag), 0) < (ssize_t)sizeof(cancel_flag))
     {
         VitaMTP_Log(VitaMTP_ERROR, "failed to send command to stop wireless search\n");
     }
