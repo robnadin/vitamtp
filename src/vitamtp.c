@@ -23,6 +23,7 @@
 #include <string.h>
 #include "ptp.h"
 #include "vitamtp.h"
+#include "ptp_defines.h"
 
 int g_VitaMTP_logmask = VitaMTP_ERROR;
 

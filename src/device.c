@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include "ptp.h"
 #include "vitamtp.h"
+#include "ptp_defines.h"
 
 extern int g_VitaMTP_logmask;
 
