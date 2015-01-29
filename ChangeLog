@@ -1,3 +1,10 @@
+vitamtp (2.5.5) unstable; urgency=low
+
+  * Add pre 2.00 protocol versions.
+  * Sync ptp related files with libmtp-1.1.8
+
+ -- codestation <codestation404@gmail.com>  Sun, 29 Jan 2015 00:00:00 -0000
+
 vitamtp (2.5.4) unstable; urgency=low
 
   * Updated vitamtp protocol version so is compatible with FW 3.30.
