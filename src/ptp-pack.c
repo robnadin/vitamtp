@@ -34,6 +34,10 @@
 #include <iconv.h>
 #endif
 
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 static inline uint16_t
 htod16p (PTPParams *params, uint16_t var)
 {

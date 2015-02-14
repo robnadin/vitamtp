@@ -1339,9 +1339,10 @@ vita_device_t *VitaMTP_Open_USB_Vita(vita_raw_device_t *raw_device)
     PTPDevicePropDesc dpd;
     memset(&dpd,0,sizeof(dpd));
 
-    if(ptp_getdevicepropdesc(current_params, PTP_DPC_MTP_DeviceFriendlyName, &dpd) != PTP_RC_OK)
+    int ret = ptp_getdevicepropdesc(current_params, PTP_DPC_MTP_DeviceFriendlyName, &dpd);
+    if(ret != PTP_RC_OK)
     {
-        VitaMTP_Log(VitaMTP_ERROR, "Cannot read device name, tying to continue\n");
+        VitaMTP_Log(VitaMTP_ERROR, "Cannot read device name (error: %i), tying to continue\n", ret);
     }
     else
     {
