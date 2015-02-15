@@ -1340,9 +1340,12 @@ vita_device_t *VitaMTP_Open_USB_Vita(vita_raw_device_t *raw_device)
     memset(&dpd,0,sizeof(dpd));
 
     int ret = ptp_getdevicepropdesc(current_params, PTP_DPC_MTP_DeviceFriendlyName, &dpd);
-    if(ret != PTP_RC_OK)
+    if(ret == PTP_ERROR_DATA_EXPECTED)
     {
-        VitaMTP_Log(VitaMTP_ERROR, "Cannot read device name (error: %i), tying to continue\n", ret);
+        VitaMTP_Log(VitaMTP_ERROR, "Cannot read device name, device on standby\n");
+        free(current_params);
+        free(dev);
+        return NULL;
     }
     else
     {
