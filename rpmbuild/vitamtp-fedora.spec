@@ -5,9 +5,9 @@
 %define _version 2.5.4
 
 %if "%{_version}" == "testing" || "%{_version}" == "master"
-%define _verprefix
+%define _verprefix %{_version}
 %else
-%define _verprefix v
+%define _verprefix v%{_version}
 %endif
 
 Name:           libvitamtp
@@ -18,7 +18,7 @@ Summary:        Low-level Vita communication library
 License:        GPL-3.0
 Group:          System/Libraries
 URL:            https://github.com/codestation/vitamtp
-Source:         https://github.com/codestation/vitamtp/archive/%{_verprefix}%{_version}/vitamtp-%{_version}.tar.gz
+Source:         https://github.com/codestation/vitamtp/archive/%{_verprefix}/vitamtp-%{_version}.tar.gz
 BuildRequires:  pkgconfig
 BuildRequires:  libxml2-devel
 BuildRequires:  libusbx-devel
