@@ -53,11 +53,12 @@ the Vita sends, which are a proprietary set of commands that is based on
 the MTP open standard.
 This package contains only the files necessary for development.
 
-%setup -n %{name}%{sonum} -DT
+%prep
+%setup
 
 %build
 ./autogen.sh
-./configure --prefix=/usr --libdir=%{_libdir}
+%configure
 make %{?_smp_mflags}
 
 %install
