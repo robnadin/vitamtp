@@ -2,7 +2,7 @@
 # vitamtp spec file
 # 
 
-%define _version 2.5.4
+%define _version 2.5.5
 
 %if "%{_version}" == "testing" || "%{_version}" == "master"
 %define _verprefix %{_version}
@@ -22,6 +22,7 @@ Source:         https://github.com/codestation/vitamtp/archive/%{_verprefix}/vit
 BuildRequires:  pkgconfig
 BuildRequires:  libxml2-devel
 BuildRequires:  libusbx-devel
+BuildRequires:  libtool
 
 %description
 libvitamtp is a library based off of libmtp that does low level USB
