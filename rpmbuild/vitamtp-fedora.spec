@@ -22,8 +22,8 @@ Source:         https://github.com/codestation/vitamtp/archive/%{_verprefix}/vit
 BuildRequires:  pkgconfig
 BuildRequires:  libxml2-devel
 BuildRequires:  libusbx-devel
+BuildRequires:  gettext-devel
 BuildRequires:  libtool
-BuildRequires:  gettext
 
 %description
 libvitamtp is a library based off of libmtp that does low level USB
