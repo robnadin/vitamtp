@@ -23,7 +23,7 @@ BuildRequires:  pkg-config
 BuildRequires:  libxml2-devel
 BuildRequires:  libusb-1_0-devel
 BuildRequires:  libtool
-BuildRequires:  gettext
+BuildRequires:  gettext-tools
 
 %description
 libvitamtp is a library based off of libmtp that does low level USB
