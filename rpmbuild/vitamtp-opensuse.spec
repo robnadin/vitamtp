@@ -11,7 +11,7 @@
 %endif
 
 Name:           libvitamtp
-Version:        2.5.4
+Version:        %{_version}
 Release:        0
 %define sonum   4
 Summary:        Low-level Vita communication library
