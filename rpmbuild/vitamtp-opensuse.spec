@@ -54,7 +54,7 @@ the MTP open standard.
 This package contains only the files necessary for development.
 
 %prep
-%setup
+%setup -n vitamtp-%{version}
 
 %build
 ./autogen.sh
