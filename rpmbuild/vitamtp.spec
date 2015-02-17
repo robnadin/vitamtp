@@ -10,6 +10,16 @@
 %define _verprefix v%{_version}
 %endif
 
+%if %{defined fedora}
+%define _pkgconfig pkgconfig
+%define _libusb libusbx-devel
+%define _gettext gettext-devel
+%else
+%define _pkgconfig pkg-config
+%define _libusb libusb-1_0-devel
+%define _gettext gettext-tools
+%endif
+
 Name:           libvitamtp
 Version:        %{_version}
 Release:        0
@@ -19,10 +29,10 @@ License:        GPL-3.0
 Group:          System/Libraries
 URL:            https://github.com/codestation/vitamtp
 Source:         https://github.com/codestation/vitamtp/archive/%{_verprefix}/vitamtp-%{_version}.tar.gz
-BuildRequires:  pkg-config
+BuildRequires:  %{_pkgconfig}
 BuildRequires:  libxml2-devel
-BuildRequires:  libusb-1_0-devel
-BuildRequires:  gettext-tools
+BuildRequires:  %{_libusb}
+BuildRequires:  %{_gettext}
 BuildRequires:  libtool
 
 %description
@@ -46,7 +56,7 @@ Summary:        Low-level Vita communication library - development files
 Group:          Development/Libraries/C and C++
 Requires:       %{name}%{sonum} = %{version}
 Requires:       libxml2-devel
-Requires:       libusb-1_0-devel
+Requires:       %{_libusb}
 
 %description devel
 libvitamtp is a library based off of libmtp that does low level USB
