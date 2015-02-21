@@ -10,7 +10,7 @@
 %define _verprefix v%{_version}
 %endif
 
-%if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
+%if 0%{?fedora} || 0%{?centos}
 %define _pkgconfig pkgconfig
 %define _libusb libusbx-devel
 %define _gettext gettext-devel
