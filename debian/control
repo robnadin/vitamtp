@@ -1,7 +1,7 @@
 Source: vitamtp
-Priority: extra
+Priority: optional
 Maintainer: codestation <codestation404@gmail.com>
-Standards-Version: 3.9.2
+Standards-Version: 3.9.6
 Section: libs
 Homepage: https://github.com/codestation/VitaMTP
 Vcs-Git: git://github.com/codestation/VitaMTP.git
@@ -19,19 +19,20 @@ Build-Depends:
 
 Package: vitamtp-dev
 Section: libdevel
-Priority: optional
 Architecture: any
 Depends: vitamtp4 (= ${binary:Version}), ${misc:Depends}, libusb-1.0-0-dev, libxml2-dev
-Description: Library to interact with Vita's USB MTP protocol
+Description: development files to interact with Vita's USB MTP protocol
+ This package contains the header files for
+ developping with libVitaMTP, a library that
+ does low level USB communications with the Vita.
 
 Package: vitamtp4
-Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Library to interact with Vita's USB MTP protocol
  libVitaMTP is a library based off of libMTP 
  that does low level USB communications with 
- the Vita. It can read and recieve MTP commands 
+ the Vita. It can read and receive MTP commands
  that the Vita sends, which are a proprietary 
  set of commands that is based on the MTP open 
  standard.

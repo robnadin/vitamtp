@@ -638,7 +638,7 @@ ptp_ptpip_init_command_request(PTPParams *params)
 
     memcpy(&cmdrequest[ptpip_initcmd_guid], guid, 16);
 
-    VitaMTP_Log(VitaMTP_DEBUG, "ptpip/init_cmd recieved\n");
+    VitaMTP_Log(VitaMTP_DEBUG, "ptpip/init_cmd received\n");
 
     if (MASK_SET(g_VitaMTP_logmask, VitaMTP_DEBUG))
     {
@@ -704,7 +704,7 @@ ptp_ptpip_init_event_request(PTPParams *params)
     htod32a(&evtrequest[ptpip_len],ptpip_eventinit_size);
     htod32a(&evtrequest[ptpip_eventinit_idx],params->eventpipeid);
 
-    VitaMTP_Log(VitaMTP_DEBUG, "ptpip/init_event recieved\n");
+    VitaMTP_Log(VitaMTP_DEBUG, "ptpip/init_event received\n");
 
     if (MASK_SET(g_VitaMTP_logmask, VitaMTP_DEBUG))
     {
@@ -883,7 +883,7 @@ VitaMTP_PTPIP_Connect(PTPParams *params, struct sockaddr_in *saddr, int port)
         return -1;
     }
 
-    // on Vita both must be connected before anything can be recieved
+    // on Vita both must be connected before anything can be received
     if (SOCKET_ERROR == connect(params->evtfd, (struct sockaddr *)saddr, sizeof(struct sockaddr_in)))
     {
         perror("connect evt");
@@ -1049,7 +1049,7 @@ static int VitaMTP_Sock_Read_All(int sockfd, unsigned char **p_data, size_t *p_l
             break;
         }
 
-        VitaMTP_Log(VitaMTP_DEBUG, "Recieved %d bytes from socket %d\n", (unsigned int)clen, sockfd);
+        VitaMTP_Log(VitaMTP_DEBUG, "Received %d bytes from socket %d\n", (unsigned int)clen, sockfd);
 
         if (MASK_SET(g_VitaMTP_logmask, VitaMTP_DEBUG))
         {
@@ -1193,7 +1193,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
         {
             if (recv(g_broadcast_command_fds[0], (char *)&cmd, sizeof(enum broadcast_command), 0) < (ssize_t)sizeof(enum broadcast_command))
             {
-                VitaMTP_Log(VitaMTP_ERROR, "Error recieving broadcast command. Stopping broadcast.\n");
+                VitaMTP_Log(VitaMTP_ERROR, "Error receiving broadcast command. Stopping broadcast.\n");
                 cmd = BroadcastStop;
             }
 
@@ -1204,7 +1204,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
             }
             else
             {
-                VitaMTP_Log(VitaMTP_ERROR, "Unknown command recieved: %d\n", cmd);
+                VitaMTP_Log(VitaMTP_ERROR, "Unknown command received: %d\n", cmd);
             }
         }
 
@@ -1215,7 +1215,7 @@ int VitaMTP_Broadcast_Host(wireless_host_info_t *info, unsigned int host_addr)
 
         if (VitaMTP_Sock_Read_All(sock, (unsigned char **)&data, &len, (struct sockaddr *)&si_client, &slen) < 0)
         {
-            VitaMTP_Log(VitaMTP_ERROR, "error recieving broadcast data\n");
+            VitaMTP_Log(VitaMTP_ERROR, "error receiving broadcast data\n");
             free(host_response);
             close(sock);
             close(g_broadcast_command_fds[0]);
@@ -1416,7 +1416,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
             int cancel_flag = 0;
             if (recv(g_cancel_fds[0], (char *)&cancel_flag, sizeof(cancel_flag), 0) < (ssize_t)sizeof(cancel_flag))
             {
-                VitaMTP_Log(VitaMTP_ERROR, "Error recieving cancel flag. Stopping connection.\n");
+                VitaMTP_Log(VitaMTP_ERROR, "Error receiving cancel flag. Stopping connection.\n");
                 cancel_flag = 1;
             }
 
@@ -1427,7 +1427,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
             }
             else
             {
-                VitaMTP_Log(VitaMTP_ERROR, "Unknown cancel flag recieved: %d\n", cancel_flag);
+                VitaMTP_Log(VitaMTP_ERROR, "Unknown cancel flag received: %d\n", cancel_flag);
             }
         }
 
@@ -1558,7 +1558,7 @@ static int VitaMTP_Get_Wireless_Device(wireless_host_info_t *info, vita_device_t
                 // no response needed
                 if (!(strcmp(method, "REGISTERRESULT") || strcmp(method, "REGISTERCANCEL")))
                 {
-                    VitaMTP_Log(VitaMTP_INFO, "Unkown method %s\n", method);
+                    VitaMTP_Log(VitaMTP_INFO, "Unknown method %s\n", method);
                 }
 
                 free(data);

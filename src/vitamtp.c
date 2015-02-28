@@ -569,7 +569,7 @@ uint16_t VitaMTP_GetTreatObject(vita_device_t *device, uint32_t event_id, treat_
 }
 
 /**
- * Recieves information on object to send copy confirmation
+ * Receives information on object to send copy confirmation
  * Report is not needed after call to this command, but
  * VitaMTP_SendCopyConfirmationInfo() should be called soon.
  *
@@ -941,7 +941,7 @@ uint16_t VitaMTP_GetObject_Callback(vita_device_t *device, uint32_t handle, uint
 /**
  * Gets the name, size, and a small part of the object specified.
  * At most 0x400 bytes will be read to determine what kind of
- * object is about to be recieved.
+ * object is about to be received.
  *
  * @param device a pointer to the device.
  * @param existance pointer to where results will be stored.
