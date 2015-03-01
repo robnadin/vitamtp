@@ -44,7 +44,7 @@ WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH 
 
 #include <string.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 # include <winsock2.h>
 # include <io.h>
 
@@ -55,7 +55,7 @@ typedef int socklen_t;
 # include <sys/socket.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 
 /* dumb_socketpair:
  *   If make_overlapped is nonzero, both sockets created will be usable for
