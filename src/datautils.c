@@ -18,6 +18,8 @@
 //
 
 #define _GNU_SOURCE
+#include __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -515,7 +517,7 @@ int VitaMTP_Data_Metadata_To_XML(const metadata_t *p_metadata, char **data, int 
         xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "index", "%d", i++);
         xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "ohfiParent", "%d", current->ohfiParent);
         xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "ohfi", "%d", current->ohfi);
-        xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "size", "%lu", current->size);
+        xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "size", "%" PRIu64, current->size);
         timestamp = VitaMTP_Data_Make_Timestamp(current->dateTimeCreated);
         xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "dateTimeCreated", "%s", timestamp);
         free(timestamp);
