@@ -342,9 +342,9 @@ ptp_write_func(
                                  &xwritten,
                                  ptp_usb->timeout);
 
-            VitaMTP_Log(VitaMTP_DEBUG, "USB OUT==>\n");
+            VitaMTP_Log(VitaMTP_DEBUG, "USB OUT (1) ==>\n");
 
-            if (ret != LIBUSB_SUCCESS)
+            if (ret != LIBUSB_SUCCESS || xwritten == 0)
             {
                 return PTP_ERROR_IO;
             }
@@ -400,7 +400,7 @@ ptp_write_func(
         {
             int xwritten;
 
-            VitaMTP_Log(VitaMTP_DEBUG, "USB OUT==>\n");
+            VitaMTP_Log(VitaMTP_DEBUG, "USB OUT (2) ==>\n");
             VitaMTP_Log(VitaMTP_DEBUG, "Zero Write\n");
 
             ret =USB_BULK_WRITE(ptp_usb->handle,
