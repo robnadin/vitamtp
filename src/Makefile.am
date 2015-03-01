@@ -29,7 +29,7 @@ SOVERSION=$(CURRENT):$(REVISION):$(AGE)
 LT_CURRENT_MINUS_AGE=`expr $(CURRENT) - $(AGE)`
 
 if COMPILE_MINGW32
-W32_CFLAGS=-D__USE_MINGW_ANSI_STDIO -mno-ms-bitfields
+W32_CFLAGS=-mno-ms-bitfields
 W32_LDFLAGS=-lws2_32
 endif
 
@@ -39,7 +39,7 @@ libvitamtp_la_SOURCES=vitamtp.h datautils.c device.c ptp.c usb.c vitamtp.c wirel
 if COMPILE_MINGW32
 libvitamtp_la_SOURCES += asprintf.c socketpair.c
 endif
-libvitamtp_la_CFLAGS=-std=gnu99 -fgnu89-inline -Wall -Wextra -Wno-unused-parameter $(XML_CFLAGS) $(LIBUSB_CFLAGS) $(DEVICE_CFLAGS) $(PTHREAD_CFLAGS) $(W32_CFLAGS)
+libvitamtp_la_CFLAGS=-std=c99 -Wall -Wextra -Wno-unused-parameter -Wno-parentheses $(XML_CFLAGS) $(LIBUSB_CFLAGS) $(DEVICE_CFLAGS) $(PTHREAD_CFLAGS) $(W32_CFLAGS)
 libvitamtp_la_LDFLAGS=$(XML_LIBS) $(LIBUSB_LIBS) $(PTHREAD_LIBS) -no-undefined -export-symbols-regex "VitaMTP_[0-9A-Za-z_]+" -version-info $(SOVERSION) $(W32_LDFLAGS)
 libvitamtp_la_LIBADD=$(LTLIBICONV)
 
