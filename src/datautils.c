@@ -18,7 +18,7 @@
 //
 
 #define _GNU_SOURCE
-#include __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
