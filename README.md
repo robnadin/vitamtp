@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/codestation/vitamtp.svg)](https://travis-ci.org/codestation/vitamtp)
+[![Build Status](https://travis-ci.org/codestation/vitamtp.svg?branch=master)](https://travis-ci.org/codestation/vitamtp)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/4464/badge.svg)](https://scan.coverity.com/projects/4464)
 
 libvitamtp
 ======================
