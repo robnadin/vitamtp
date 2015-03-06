@@ -1,9 +1,11 @@
+[![Build Status](https://travis-ci.org/codestation/vitamtp.svg)](https://travis-ci.org/codestation/vitamtp)
+
 libvitamtp
 ======================
 
 ## What is this?
 
-libVitaMTP is a library based off of libMTP that does low level USB 
+libvitamtp is a library based off of libMTP that does low level USB
 communications with the Vita. It can read and receive MTP commands 
 that the Vita sends, which are a proprietary set of commands that is 
 based on the MTP open standard.

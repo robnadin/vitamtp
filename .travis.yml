@@ -1,5 +1,8 @@
 os: linux
 language: c
+branches:
+  only:
+    - master
 before_install:
   - sudo apt-get install -y libxml2-dev libusb-1.0-0-dev autotools-dev automake libtool pkg-config gettext
   - ./autogen.sh
