@@ -1,0 +1,4 @@
+os: linux
+language: c
+before_install:
+  - sudo apt-get install -y libxml2-dev libusb-1.0-0-dev
