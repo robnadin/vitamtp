@@ -18,6 +18,7 @@
 //
 
 #ifdef PTP_USB_SUPPORT
+#define _GNU_SOURCE
 #include "config.h"
 #include <iconv.h>
 #include <pthread.h>
