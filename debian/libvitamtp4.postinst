@@ -7,7 +7,7 @@ case "$1" in
 
     if ! getent group vitamtp >/dev/null; then
         echo -n "Adding group vitamtp.."
-        groupadd --quiet --system vitamtp
+        groupadd --system vitamtp
         echo "..done"
     fi
     ;;
