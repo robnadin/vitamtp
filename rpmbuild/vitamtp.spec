@@ -2,7 +2,7 @@
 # vitamtp spec file
 # 
 
-%define _version 2.5.6
+%define _version 2.5.7
 
 %if "%{_version}" == "testing" || "%{_version}" == "master"
 %define _verprefix %{_version}
@@ -87,6 +87,10 @@ cp debian/vitamtp%{sonum}.udev %{buildroot}/usr/lib/udev/rules.d/80-psvita.rules
 %doc README.md ChangeLog COPYING
 %{_libdir}/lib*.so.*
 %{_udevrulesdir}/80-psvita.rules
+
+%pre
+getent group vitamtp >/dev/null 2>&1 ||  groupadd --system vitamtp &>/dev/null
+echo "NOTE: To use qcma as normal user you have to add yourself into vitamtp group"
 
 %files devel
 %defattr(-,root,root)

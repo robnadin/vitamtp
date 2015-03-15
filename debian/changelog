@@ -1,3 +1,9 @@
+vitamtp (2.5.7) unstable; urgency=low
+
+  * Use vitamtp group for USB access.
+
+ -- codestation <codestation404@gmail.com>  Sun, 15 Mar 2015 19:59:07 -0000
+
 vitamtp (2.5.6) unstable; urgency=low
 
   * Fix filesize truncation bug on windows.
