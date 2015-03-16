@@ -29,6 +29,7 @@ License:        GPL-3.0
 Group:          System/Libraries
 URL:            https://github.com/codestation/vitamtp
 Source:         https://github.com/codestation/vitamtp/archive/%{_verprefix}/vitamtp-%{_version}.tar.gz
+Requires(pre):  shadow-utils
 BuildRequires:  %{_pkgconfig}
 BuildRequires:  libxml2-devel
 BuildRequires:  %{_libusb}
@@ -77,7 +78,7 @@ make %{?_smp_mflags}
 %makeinstall
 rm -rf %{buildroot}/%{_libdir}/*.la
 mkdir -p %{buildroot}/usr/lib/udev/rules.d
-cp debian/vitamtp%{sonum}.udev %{buildroot}/usr/lib/udev/rules.d/80-psvita.rules
+cp debian/libvitamtp%{sonum}.udev %{buildroot}/usr/lib/udev/rules.d/80-psvita.rules
 
 %post -n %{name}%{sonum} -p /sbin/ldconfig
 %postun -n %{name}%{sonum} -p /sbin/ldconfig
@@ -88,10 +89,6 @@ cp debian/vitamtp%{sonum}.udev %{buildroot}/usr/lib/udev/rules.d/80-psvita.rules
 %{_libdir}/lib*.so.*
 %{_udevrulesdir}/80-psvita.rules
 
-%pre
-getent group vitamtp >/dev/null 2>&1 ||  groupadd --system vitamtp &>/dev/null
-echo "NOTE: To use qcma as normal user you have to add yourself into vitamtp group"
-
 %files devel
 %defattr(-,root,root)
 %{_prefix}/include/vitamtp.h
@@ -100,3 +97,8 @@ echo "NOTE: To use qcma as normal user you have to add yourself into vitamtp gro
 %{_libdir}/pkgconfig/libvitamtp.pc
 
 %changelog
+
+%pre -n %{name}%{sonum}
+getent group vitamtp >/dev/null ||  groupadd -r vitamtp
+echo "NOTE: To use qcma as normal user you have to add yourself into vitamtp group"
+exit 0

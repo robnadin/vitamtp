@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: vitamtp
-Source: http://github.com/codestation/VitaMTP
+Source: http://github.com/codestation/vitamtp
 
 Files: *
 Copyright: 2013 Yifan Lu <support@yifanlu.com>
