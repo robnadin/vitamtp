@@ -753,8 +753,10 @@ void VitaMTP_Release_USB_Device(vita_device_t *device);
 int VitaMTP_Get_USB_Vitas(vita_raw_device_t **p_raw_devices);
 void VitaMTP_Unget_USB_Vitas(vita_raw_device_t *raw_devices, int numdevs);
 vita_device_t *VitaMTP_Get_First_USB_Vita(void);
+int VitaMTP_USB_Init(void);
 int VitaMTP_USB_Clear(vita_device_t *vita_device);
 int VitaMTP_USB_Reset(vita_device_t *vita_device);
+void VitaMTP_USB_Exit(void);
 
 /**
  * Funcions for wireless devices

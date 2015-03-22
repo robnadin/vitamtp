@@ -1,6 +1,7 @@
 vitamtp (2.5.7) unstable; urgency=low
 
   * Use vitamtp group for USB access.
+  * Explicit USB initialization via VitaMTP_USB_(Init|Exit).
 
  -- codestation <codestation404@gmail.com>  Sun, 15 Mar 2015 19:59:07 -0000
 
