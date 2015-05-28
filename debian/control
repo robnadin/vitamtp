@@ -20,7 +20,7 @@ Build-Depends:
 Package: libvitamtp-dev
 Section: libdevel
 Architecture: any
-Depends: libvitamtp4 (= ${binary:Version}), ${misc:Depends}, libusb-1.0-0-dev, libxml2-dev
+Depends: libvitamtp5 (= ${binary:Version}), ${misc:Depends}, libusb-1.0-0-dev, libxml2-dev
 Conflicts: vitamtp-dev
 Replaces: vitamtp-dev
 Description: development files to interact with Vita's USB MTP protocol
@@ -28,7 +28,7 @@ Description: development files to interact with Vita's USB MTP protocol
  developping with libVitaMTP, a library that
  does low level USB communications with the Vita.
 
-Package: libvitamtp4
+Package: libvitamtp5
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: vitamtp4
