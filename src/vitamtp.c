@@ -500,7 +500,8 @@ uint16_t VitaMTP_OperateObject(vita_device_t *device, uint32_t event_id, operate
     op_object->unk1 = data[2];
     op_object->len = data[3];
     op_object->title = (char *)malloc(op_object->len+1);
-    memcpy(op_object->title, (char *)&data[4], op_object->len+1);
+    memcpy(op_object->title, (char *)&data[4], op_object->len);
+    op_object->title[op_object->len] = '\0';
     free(data);
     return ret;
 }
