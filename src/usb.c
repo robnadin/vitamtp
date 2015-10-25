@@ -347,6 +347,7 @@ ptp_write_func(
 
             if (ret != LIBUSB_SUCCESS || xwritten == 0)
             {
+                free(bytes);
                 return PTP_ERROR_IO;
             }
 
@@ -378,6 +379,7 @@ ptp_write_func(
 
                 if (ret != 0)
                 {
+                    free(bytes);
                     return PTP_ERROR_CANCEL;
                 }
             }
@@ -1353,6 +1355,7 @@ vita_device_t *VitaMTP_Open_USB_Vita(vita_raw_device_t *raw_device)
         if(dpd.DataType == PTP_DTC_STR)
         {
             VitaMTP_Log(VitaMTP_INFO, "Detected device name: %s\n", dpd.CurrentValue.str);
+            ptp_free_devicepropdesc(&dpd);
         }
         else
         {
