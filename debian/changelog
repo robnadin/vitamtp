@@ -1,3 +1,9 @@
+vitamtp (2.5.8) unstable; urgency=low
+
+  * prevent segfault when ptp_transaction fails to allocate and reporting OK.
+
+ -- codestation <codestation404@gmail.com>  Sun, 24 Apr 2016 00:00:00 -0000
+
 vitamtp (2.5.7) unstable; urgency=low
 
   * Use vitamtp group for USB access.
