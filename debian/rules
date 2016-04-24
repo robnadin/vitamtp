@@ -13,4 +13,4 @@
 	dh $@ --with autoreconf
 
 override_dh_installudev:
-	dh_installudev --priority=80
+	dh_installudev --priority=60
