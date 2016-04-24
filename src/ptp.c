@@ -1739,9 +1739,12 @@ ptp_getdevicepropdesc (PTPParams* params, uint16_t propcode,
 				ptp_debug(params,"failed to parse output xml, ret %x?", ret);
 			}
 #endif
-		} else {
+        // ptp_transaction returns PTP_OK but doesn't allocate dpd
+        } else if (dpd != NULL && len > 0) {
 			ptp_unpack_DPD(params, dpd, devicepropertydesc, len);
-		}
+        } else {
+            ret = PTP_RC_GeneralError;
+        }
 	}
 	free(dpd);
 	return ret;
