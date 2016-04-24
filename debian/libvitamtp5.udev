@@ -1,1 +1,1 @@
-SUBSYSTEM=="usb", ATTR{product}=="*PS Vita* Type B", GROUP="vitamtp", MODE="0660"
+SUBSYSTEM=="usb", ATTR{product}=="*PS Vita* Type B", GROUP="vitamtp", MODE="0660", TAG+="uaccess", TAG+="udev-acl"
