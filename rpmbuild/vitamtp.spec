@@ -78,7 +78,7 @@ make %{?_smp_mflags}
 %makeinstall
 rm -rf %{buildroot}/%{_libdir}/*.la
 mkdir -p %{buildroot}/usr/lib/udev/rules.d
-cp debian/libvitamtp%{sonum}.udev %{buildroot}/usr/lib/udev/rules.d/80-psvita.rules
+cp debian/libvitamtp%{sonum}.udev %{buildroot}/usr/lib/udev/rules.d/60-psvita.rules
 
 %post -n %{name}%{sonum} -p /sbin/ldconfig
 %postun -n %{name}%{sonum} -p /sbin/ldconfig
