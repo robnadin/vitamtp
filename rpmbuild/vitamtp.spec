@@ -87,7 +87,7 @@ cp debian/libvitamtp%{sonum}.udev %{buildroot}/usr/lib/udev/rules.d/60-psvita.ru
 %defattr(-,root,root)
 %doc README.md ChangeLog COPYING
 %{_libdir}/lib*.so.*
-%{_udevrulesdir}/80-psvita.rules
+%{_udevrulesdir}/60-psvita.rules
 
 %files devel
 %defattr(-,root,root)
