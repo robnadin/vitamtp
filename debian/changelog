@@ -1,3 +1,9 @@
+vitamtp (2.5.9) unstable; urgency=low
+
+  * fix: prevent buffer overflow by custom version strings.
+
+ -- codestation <codestation404@gmail.com>  Mon, 29 Aug 2016 00:00:00 -0000
+
 vitamtp (2.5.8) unstable; urgency=low
 
   * prevent segfault when ptp_transaction fails to allocate and reporting OK.

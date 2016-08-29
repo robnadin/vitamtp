@@ -24,7 +24,7 @@ include_HEADERS=vitamtp.h
 # ---------------------------------------------------------------------------
 CURRENT=5
 AGE=0
-REVISION=0
+REVISION=1
 SOVERSION=$(CURRENT):$(REVISION):$(AGE)
 LT_CURRENT_MINUS_AGE=`expr $(CURRENT) - $(AGE)`
 
