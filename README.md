@@ -1,6 +1,3 @@
-[![Build Status](https://travis-ci.org/codestation/vitamtp.svg?branch=master)](https://travis-ci.org/codestation/vitamtp)
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/4464/badge.svg)](https://scan.coverity.com/projects/4464)
-
 libvitamtp
 ======================
 
@@ -40,6 +37,12 @@ in vitamtp.c to figure out how functions work and what you can do. OpenCMA has
 been designed with simplicity in mind so there is no harm in reading the code 
 and comments for opencma.c and related files. Your implementation should be 
 very similar if you wish to replicate CMA functionality.
+
+## Build Dependencies
+
+* libtool
+* automake
+* gettext
 
 ## Credits?
 

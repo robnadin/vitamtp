@@ -120,7 +120,11 @@ int VitaMTP_Data_Info_From_XML(vita_info_t *vita_info, const char *raw_data, con
     vita_info->onlineId = (char *)xmlGetProp(node, BAD_CAST "onlineId");
     vita_info->modelInfo = (char *)xmlGetProp(node, BAD_CAST "modelInfo");
 
-    strcpy(vita_info->responderVersion, (char *)responderVersion);
+    // prevent buffer overflow by custom version strings
+    int version_size = sizeof(vita_info->responderVersion) - 1;
+    strncpy(vita_info->responderVersion, (char *)responderVersion, version_size);
+    vita_info->responderVersion[version_size] = '\0';
+
     vita_info->protocolVersion = atoi((char *)protocolVersion);
     xmlFree(responderVersion);
     xmlFree(protocolVersion);
