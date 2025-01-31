@@ -16,7 +16,11 @@ fail() {
 echo "Removing libtool cruft"
 rm -f ltmain.sh config.guess config.sub
 echo "Running libtoolize"
-libtoolize --copy --force || fail
+if [ "$(uname)" = "Darwin" ]; then
+    glibtoolize --copy --force || fail
+else
+    libtoolize --copy --force || fail
+fi
 
 # Refresh GNU autotools toolchain: aclocal autoheader
 echo "Removing aclocal cruft"
@@ -43,4 +47,3 @@ echo "Running autoconf"
 autoconf
 
 echo "Finished!"
-
